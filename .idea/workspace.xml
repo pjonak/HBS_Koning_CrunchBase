@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="52863255-f87b-4a32-9ce2-af98707d48a3" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/RKoning_CB_test_json.py" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/prjKoning_aggregateJSON.py" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/prjKoning_CB.py" afterPath="$PROJECT_DIR$/RKoning_CB_try1.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/prjKoning_CB.py" afterPath="$PROJECT_DIR$/prjKoning_CB.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -13,8 +15,20 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/code$prjKoning_aggregateJSON.coverage" NAME="prjKoning_aggregateJSON Coverage Results" MODIFIED="1486656080611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$prjKnoning_exploreData_CrunchBase_Orgs.coverage" NAME="prjKnoning_exploreData_CrunchBase_Orgs Coverage Results" MODIFIED="1488205870231" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_LoadAndTrim_Orgs.coverage" NAME="RKoning_CB_LoadAndTrim_Orgs Coverage Results" MODIFIED="1488316282539" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_test_json.coverage" NAME="RKoning_CB_test_json Coverage Results" MODIFIED="1489606143723" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$ex_interact_JSON.coverage" NAME="ex_interact_JSON Coverage Results" MODIFIED="1486756969194" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="C:/Python/Projects/examples" />
+    <SUITE FILE_PATH="coverage/code$WebScrape_cacti.coverage" NAME="WebScrape_cacti Coverage Results" MODIFIED="1486756292549" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="C:/Python/Projects/WebScrape_cacti" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_exploreOrg_v2.coverage" NAME="RKoning_CB_exploreOrg_v2 Coverage Results" MODIFIED="1490205647714" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$prjKoning_CB_cleanOrg.coverage" NAME="prjKoning_CB_cleanOrg Coverage Results" MODIFIED="1487952408062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_LoadAndTrim_Orgs_v2.coverage" NAME="RKoning_CB_LoadAndTrim_Orgs_v2 Coverage Results" MODIFIED="1489634193817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$prjKoning_aggregateJSON.coverage" NAME="prjKoning_aggregateJSON Coverage Results" MODIFIED="1487102001592" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_LoadAndTrim_Orgs_v3.coverage" NAME="RKoning_CB_LoadAndTrim_Orgs_v3 Coverage Results" MODIFIED="1490279094208" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/code$prjKoning_CB.coverage" NAME="prjKoning_CB Coverage Results" MODIFIED="1486652743145" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_main.coverage" NAME="RKoning_CB_main Coverage Results" MODIFIED="1488552191216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_exploreOrg_v3.coverage" NAME="RKoning_CB_exploreOrg_v3 Coverage Results" MODIFIED="1490279186105" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/code$RKoning_CB_exploreOrg.coverage" NAME="RKoning_CB_exploreOrg Coverage Results" MODIFIED="1489626946444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
@@ -22,40 +36,34 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="prjKoning_CB.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+      <file leaf-file-name="RKoning_CB_LoadAndTrim_Orgs_v3.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="275">
-              <caret line="555" column="16" lean-forward="true" selection-start-line="555" selection-start-column="16" selection-end-line="555" selection-end-column="38" />
+            <state relative-caret-position="534">
+              <caret line="341" column="0" lean-forward="false" selection-start-line="341" selection-start-column="0" selection-end-line="341" selection-end-column="0" />
               <folding>
-                <element signature="e#596#647#0" expanded="true" />
+                <element signature="e#0#9#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="prjKoning_aggregateJSON.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/prjKoning_aggregateJSON.py">
+      <file leaf-file-name="RKoning_CB_exploreOrg_v3.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg_v3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="390">
-              <caret line="26" column="6" lean-forward="false" selection-start-line="26" selection-start-column="6" selection-end-line="26" selection-end-column="6" />
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="748">
+              <caret line="256" column="0" lean-forward="true" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="WebScrape_cacti.py" pinned="false" current-in-tab="false">
-        <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <file leaf-file-name="testUnix.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/testUnix.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="16609">
-              <caret line="994" column="18" lean-forward="false" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
-              <folding>
-                <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-                <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-                <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-              </folding>
+            <state relative-caret-position="170">
+              <caret line="10" column="6" lean-forward="true" selection-start-line="10" selection-start-column="6" selection-end-line="10" selection-end-column="6" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -71,8 +79,12 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>shape</find>
       <find>orgData_findBy_employees</find>
+      <find>exist</find>
+      <find>chained</find>
+      <find>colTypeList</find>
+      <find>key=</find>
+      <find>shape</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -82,7 +94,20 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/prjKoning_CB.py" />
+        <option value="C:/Python/Projects/examples/ex_interact_JSON.py" />
         <option value="$PROJECT_DIR$/prjKoning_aggregateJSON.py" />
+        <option value="$PROJECT_DIR$/prjKoning_CB_cleanOrg.py" />
+        <option value="$PROJECT_DIR$/prjKnoning_exploreData_CrunchBase_Orgs.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_trimOrgs.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_main.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_test_json.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_exploreOrg.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v2.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_exploreOrg_v2.py" />
+        <option value="$PROJECT_DIR$/testUnix.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v3.py" />
+        <option value="$PROJECT_DIR$/RKoning_CB_exploreOrg_v3.py" />
       </list>
     </option>
   </component>
@@ -93,10 +118,9 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="2019" />
-    <option name="y" value="49" />
-    <option name="width" value="929" />
-    <option name="height" value="901" />
+    <option name="x" value="72" />
+    <option name="width" value="1326" />
+    <option name="height" value="1400" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -127,15 +151,21 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
       <pane id="Scratches" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="js.eslint.eslintPackage" value="" />
   </component>
-  <component name="RunManager" selected="Python.prjKoning_aggregateJSON">
-    <configuration default="false" name="prjKoning_CB" type="PythonConfigurationType" factoryName="Python" temporary="true">
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\pjonak\Documents\Projects\RKoning\Crunchbase_SimilarWeb_BuiltWith\code" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.RKoning_CB_exploreOrg_v3">
+    <configuration default="false" name="RKoning_CB_exploreOrg" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -148,12 +178,12 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="code" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/prjKoning_CB.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RKoning_CB_exploreOrg.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
     </configuration>
-    <configuration default="false" name="prjKoning_aggregateJSON" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration default="false" name="RKoning_CB_LoadAndTrim_Orgs_v2" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -166,7 +196,61 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="code" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/prjKoning_aggregateJSON.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="RKoning_CB_exploreOrg_v2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="code" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RKoning_CB_exploreOrg_v2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="RKoning_CB_LoadAndTrim_Orgs_v3" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="code" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v3.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="RKoning_CB_exploreOrg_v3" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="code" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RKoning_CB_exploreOrg_v3.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -385,19 +469,28 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="2">
-      <item index="0" class="java.lang.String" itemvalue="Python.prjKoning_CB" />
-      <item index="1" class="java.lang.String" itemvalue="Python.prjKoning_aggregateJSON" />
+    <list size="5">
+      <item index="0" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg" />
+      <item index="1" class="java.lang.String" itemvalue="Python.RKoning_CB_LoadAndTrim_Orgs_v2" />
+      <item index="2" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg_v2" />
+      <item index="3" class="java.lang.String" itemvalue="Python.RKoning_CB_LoadAndTrim_Orgs_v3" />
+      <item index="4" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg_v3" />
     </list>
     <recent_temporary>
-      <list size="2">
-        <item index="0" class="java.lang.String" itemvalue="Python.prjKoning_aggregateJSON" />
-        <item index="1" class="java.lang.String" itemvalue="Python.prjKoning_CB" />
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg_v3" />
+        <item index="1" class="java.lang.String" itemvalue="Python.RKoning_CB_LoadAndTrim_Orgs_v3" />
+        <item index="2" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg_v2" />
+        <item index="3" class="java.lang.String" itemvalue="Python.RKoning_CB_LoadAndTrim_Orgs_v2" />
+        <item index="4" class="java.lang.String" itemvalue="Python.RKoning_CB_exploreOrg" />
       </list>
     </recent_temporary>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -410,16 +503,16 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="2019" y="49" width="929" height="901" extended-state="0" />
-    <editor active="true" />
+    <frame x="72" y="0" width="1326" height="1400" extended-state="0" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26725084" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21248025" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2588384" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33459595" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.12933753" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.35567823" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -444,101 +537,150 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_cleanOrg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2737">
+          <caret line="165" column="0" lean-forward="true" selection-start-line="165" selection-start-column="0" selection-end-line="165" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#596#647#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="16898">
-          <caret line="994" column="18" lean-forward="true" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
-          <folding>
-            <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-            <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-            <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-          </folding>
+        <state relative-caret-position="374">
+          <caret line="24" column="32" lean-forward="false" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#596#647#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="2907">
+          <caret line="171" column="56" lean-forward="true" selection-start-line="171" selection-start-column="56" selection-end-line="171" selection-end-column="56" />
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_cleanOrg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="44" column="13" lean-forward="false" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
-          <folding>
-            <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-            <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-            <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-          </folding>
+        <state relative-caret-position="3315">
+          <caret line="195" column="0" lean-forward="true" selection-start-line="195" selection-start-column="0" selection-end-line="195" selection-end-column="0" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#596#647#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="44" column="13" lean-forward="false" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
-          <folding>
-            <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-            <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-            <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-          </folding>
+        <state relative-caret-position="374">
+          <caret line="24" column="32" lean-forward="true" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#596#647#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="8262">
+          <caret line="492" column="61" lean-forward="false" selection-start-line="492" selection-start-column="61" selection-end-line="492" selection-end-column="61" />
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="748">
-          <caret line="44" column="13" lean-forward="true" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
-          <folding>
-            <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-            <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-            <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-          </folding>
+        <state relative-caret-position="153">
+          <caret line="11" column="49" lean-forward="false" selection-start-line="11" selection-start-column="49" selection-end-line="11" selection-end-column="49" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#596#647#0" expanded="true" />
-          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8262">
+          <caret line="492" column="61" lean-forward="false" selection-start-line="492" selection-start-column="61" selection-end-line="492" selection-end-column="61" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="11" column="49" lean-forward="true" selection-start-line="11" selection-start-column="49" selection-end-line="11" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3179">
+          <caret line="191" column="30" lean-forward="false" selection-start-line="191" selection-start-column="30" selection-end-line="194" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9673">
+          <caret line="569" column="0" lean-forward="false" selection-start-line="569" selection-start-column="0" selection-end-line="569" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9673">
+          <caret line="569" column="0" lean-forward="false" selection-start-line="569" selection-start-column="0" selection-end-line="569" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9673">
+          <caret line="569" column="0" lean-forward="true" selection-start-line="569" selection-start-column="0" selection-end-line="569" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9435">
+          <caret line="555" column="16" lean-forward="false" selection-start-line="555" selection-start-column="16" selection-end-line="555" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -546,31 +688,221 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="16609">
           <caret line="994" column="18" lean-forward="false" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
-          <folding>
-            <marker date="1485900984759" expanded="true" signature="8134:8240" ph="SELECT schem... schemata" />
-            <marker date="1485900984759" expanded="true" signature="8337:8471" ph="SELECT table... tables" />
-            <marker date="1485900984759" expanded="true" signature="14368:14515" ph="SELECT colum... columns" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_CB.py">
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="275">
+        <state relative-caret-position="9435">
+          <caret line="555" column="16" lean-forward="false" selection-start-line="555" selection-start-column="16" selection-end-line="555" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16609">
+          <caret line="994" column="18" lean-forward="false" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9435">
           <caret line="555" column="16" lean-forward="true" selection-start-line="555" selection-start-column="16" selection-end-line="555" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16609">
+          <caret line="994" column="18" lean-forward="false" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="16898">
+          <caret line="994" column="18" lean-forward="true" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="44" column="13" lean-forward="false" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="459">
+          <caret line="44" column="13" lean-forward="false" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="44" column="13" lean-forward="true" selection-start-line="44" selection-start-column="13" selection-end-line="44" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/WebScrape_cacti/WebScrape_cacti.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1229">
+          <caret line="994" column="18" lean-forward="false" selection-start-line="994" selection-start-column="18" selection-end-line="994" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python/Projects/examples/ex_interact_JSON.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="14" lean-forward="false" selection-start-line="2" selection-start-column="14" selection-end-line="2" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_cleanOrg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="680">
+          <caret line="44" column="12" lean-forward="false" selection-start-line="44" selection-start-column="12" selection-end-line="44" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_try1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="420" column="0" lean-forward="false" selection-start-line="420" selection-start-column="0" selection-end-line="469" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_test_json.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="204" column="45" lean-forward="false" selection-start-line="204" selection-start-column="45" selection-end-line="204" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4692">
+          <caret line="284" column="106" lean-forward="false" selection-start-line="284" selection-start-column="106" selection-end-line="284" selection-end-column="106" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="332">
+          <caret line="322" column="26" lean-forward="false" selection-start-line="322" selection-start-column="24" selection-end-line="322" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../AStern/NLM/code/AStern_NLM_test_convertTXT4batch.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2380">
+          <caret line="140" column="39" lean-forward="false" selection-start-line="140" selection-start-column="39" selection-end-line="140" selection-end-column="105" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2251">
+          <caret line="357" column="46" lean-forward="true" selection-start-line="357" selection-start-column="46" selection-end-line="357" selection-end-column="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5355">
+          <caret line="321" column="76" lean-forward="false" selection-start-line="321" selection-start-column="76" selection-end-line="321" selection-end-column="76" />
           <folding>
-            <element signature="e#596#647#0" expanded="true" />
+            <element signature="e#0#9#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/prjKoning_aggregateJSON.py">
+    <entry file="file://$PROJECT_DIR$/testUnix.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="26" column="6" lean-forward="false" selection-start-line="26" selection-start-column="6" selection-end-line="26" selection-end-column="6" />
+        <state relative-caret-position="170">
+          <caret line="10" column="6" lean-forward="true" selection-start-line="10" selection-start-column="6" selection-end-line="10" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg_v2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3842">
+          <caret line="226" column="46" lean-forward="false" selection-start-line="226" selection-start-column="41" selection-end-line="226" selection-end-column="46" />
           <folding>
-            <element signature="e#0#11#0" expanded="true" />
+            <element signature="e#0#9#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_LoadAndTrim_Orgs_v3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="534">
+          <caret line="341" column="0" lean-forward="false" selection-start-line="341" selection-start-column="0" selection-end-line="341" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RKoning_CB_exploreOrg_v3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="748">
+          <caret line="256" column="0" lean-forward="true" selection-start-line="256" selection-start-column="0" selection-end-line="256" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
