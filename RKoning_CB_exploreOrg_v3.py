@@ -2,7 +2,7 @@ import os
 import copy
 import pandas
 import numpy
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import datetime
 import random
 import time
@@ -13,9 +13,10 @@ folderPath_root = folderPath_root[::-1].split("\\",1)[1][::-1] + "\\"
 
 folderPath_data = "dataset\\crunchbase_2017_02_06\\"
 
-fileName_data = "organizations"
-# fileName_data = "organizations_sample"
-fileName_data = fileName_data + "_load_v3_part2_v3.csv"
+fileName = "organizations"
+# fileName = "organizations_sample"
+fileName_data = fileName + "_load_v3_part2_v3.csv"
+fileName_save = fileName + "_load_v3_part2_v3__trim.csv"
 
 
 I_sample = False
@@ -26,7 +27,7 @@ I_histograms = False
 I_isolate_yr = True
 isolate_yr_colList = ['founded_on']
 isolate_yr_start = datetime.datetime.strptime('01/01/2008','%m/%d/%Y')
-isolate_yr_end = datetime.datetime.strptime('12/31/2015','%m/%d/%Y')
+isolate_yr_end = datetime.datetime.strptime('12/31/2016','%m/%d/%Y')
 
 
 
@@ -214,12 +215,6 @@ def main():
         print("\tNumber of rows = " + str(len(datOrig)))
 
 
-    ct = 0
-    for dat in datOrig['employee_count']:
-        if isinstance(dat, str) and len(dat) > 1:
-            ct += 1
-    print(ct)
-
 
     # Isolate companies with any employee count
     print("Remove companies with no employee_count")
@@ -248,88 +243,12 @@ def main():
                 dat = dat.iloc[numpy.where(
                     (dat[colIsolate].dt.year <= isolate_yr_end.year) &
                     (dat[colIsolate].dt.year >= isolate_yr_start.year))[0]]
-
-
-    print( dat.shape[0] )
-    print("Isolating by employee_count > 1-10")
-    dat = dat.iloc[ numpy.where( dat['enum_employee_count'] > 0 )[0] ]
     print( dat.shape[0] )
 
-
-
-    # # Make sure date columns are in the right datatype
-    # print("Converting date columns to datetime")
-    # colType_json = json.loads(colTypeList)
-    # for colName in colType_json:
-    #     if colType_json[colName] == "date":
-    #         if colName in datOrig.columns:
-    #
-    #             for iRow in range(0,datOrig.shape[0]):
-    #                 if isinstance( datOrig[colName].iloc[iRow] , float):
-    #                     datOrig[colName].iloc[iRow] = None
-    #                 else:
-    #                     try:
-    #                         datOrig[colName].iloc[iRow] = pandas.to_datetime( datOrig[colName].iloc[iRow] )
-    #
-    #                     except:
-    #                         datOrig[colName].iloc[iRow] = None
-    #
-    #             # datOrig[colName] = pandas.to_datetime(datOrig[colName])
-    #
-    # # Isolate by year
-    # print("Isolating by year")
-    # dat = copy.deepcopy(datOrig)
-    # if I_isolate_yr:
-    #     for colIsolate in isolate_yr_colList:
-    #         if colIsolate in dat.columns:
-    #             dat = dat.iloc[ numpy.where(
-    #                 (dat[colIsolate].dt.year<=isolate_yr_end.year) &
-    #                 (dat[colIsolate].dt.year>=isolate_yr_start.year))[0] ]
-    #
-    # print("\tInitial row count = " + str(datOrig.shape[0]))
-    # print("\tIsolated row count = " + str(dat.shape[0]))
-    #
-    # print("\tRows with employee_count >= 1")
-    # print("\t\tAll data: " + str( len(numpy.where(datOrig['enum_employee_count'] >= 1)[0]) ) )
-    # print("\t\tIsolated data: " + str( len( numpy.where(dat['enum_employee_count'] >= 1)[0] ) ) )
-    # # print( dat['enum_employee_count'].iloc[ numpy.where(dat['enum_employee_count'] >= 1)[0] ] )
-    #
-    # print("\tRows any employee_count")
-    # print("\t\tAll data: " + str(len(numpy.where(datOrig['enum_employee_count'] >= 0)[0])))
-    # print("\t\tIsolated data: " + str(len(numpy.where(dat['enum_employee_count'] >= 0)[0])))
-    #
-    #
-    # # print( numpy.where(datOrig['employee_count'] is not None)[0] )
-    # # print( numpy.where( datOrig['enum_employee_count'] == 1 )[0] )
-    # print( datOrig['employee_count'] )
-    # print( datOrig['employee_count'].iloc[ numpy.where( datOrig['enum_employee_count'] > 0 )[0] ])
-
-
-
-
-    # # Get list of companies which are
-    # #   employee_count > 10
-    # #   within enum_founded_on = 1
-    #
-    # idxList_founded = numpy.where(dat['enum_founded_on'] == 1)[0]
-    # idxList_emp = numpy.where(dat['enum_employee_count'] >= 1)[0]
-    #
-    # print(len(idxList_founded))
-    # print(len(idxList_emp))
-    # # print(dat['enum_employee_count'].iloc[idxList_emp])
-    #
-    # idxList = numpy.where( (dat['enum_founded_on'] == 1) & (dat['enum_employee_count'] >= 1) )[0]
-    #
-    # print(len(idxList))
-    # # print(dat['enum_employee_count'].iloc[idxList])
-    #
-    # #
-    # # # print( idxList )
-    # # # print( dat['enum_employee_count'].iloc[ idxList ] )
-    # # print(len(idxList))
-    # # print(idxList)
-    # # print(dat.iloc[idxList]['enum_employee_count'])
-
+    # Save to file
+    print("Saving to file")
+    dat.to_csv(folderPath_root + folderPath_data + fileName_save, sep=',', encoding='utf-8')
+    print("Done")
 
     return
 

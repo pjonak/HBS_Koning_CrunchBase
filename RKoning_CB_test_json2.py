@@ -7,22 +7,6 @@ import copy
 import random
 
 
-# filename = "sw1.json"
-# folderPath_root_cb = "C:\\Users\\pjonak\\Documents\\Projects\\" + \
-#                      "Koning\\Crunchbase_SimilarWeb_BuiltWith\\"
-#
-#
-# print("Import SW response")
-# hFile = _io.open(folderPath_root_cb + filename)
-# dat = json.loads(hFile.read())
-# hFile.close()
-#
-# print(dat)
-# print(list(dat))
-
-
-
-
 folderPath_root = os.path.dirname( os.path.realpath(__file__) )
 folderPath_root = folderPath_root[::-1].split("\\",1)[1][::-1] + "\\"
 
@@ -36,7 +20,6 @@ I_BW = True
 
 
 
-
 # Load file
 if I_BW:
     hFile = _io.open(folderPath_root + folderPath_BW + fileName_BW)
@@ -44,43 +27,6 @@ else:
     hFile = _io.open(folderPath_root + folderPath_BW + fileName_SW)
 dat = json.loads(hFile.read())
 hFile.close()
-
-
-# # # print(dat["Results"][0])
-# print(list(dat["Results"][0]))
-# # print(dat["Results"][0]["Meta"])
-# print(list(dat["Results"][0]["Meta"]))
-# print(dat["Results"][0]["Meta"]["ARank"])
-# print(dat["Results"][0]["Meta"]["Names"])
-# print(dat["Results"][0]["Meta"]["Vertical"])
-#
-# # print(dat["Results"][0]["Lookup"])
-# # print(dat["Results"][0]["Result"])
-# # print(dat["Results"][0]["FirstIndexed"])
-# print("")
-# print(list(dat["Results"][0]["Result"]))
-# print(len(dat["Results"][0]["Result"]["Paths"]))
-# print(dat["Results"][0]["Result"]["Paths"][0])
-# print(list(dat["Results"][0]["Result"]["Paths"][0]))
-# print(dat["Results"][0]["Result"]["Paths"][0]["Url"])
-# print(dat["Results"][0]["Result"]["Paths"][0]["SubDomain"])
-# print(len(dat["Results"][0]["Result"]["Paths"][0]["Technologies"]))
-# print(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][0])
-# print(list(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][0]))
-# print(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][1])
-# print(list(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][1]))
-# print(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][2])
-# print(list(dat["Results"][0]["Result"]["Paths"][0]["Technologies"][2]))
-# print("")
-# print("")
-# print(dat["Results"][0]["Result"]["Paths"][1])
-# print(list(dat["Results"][0]["Result"]["Paths"][1]))
-# print(dat["Results"][0]["Result"]["Paths"][1]["Url"])
-# print(dat["Results"][0]["Result"]["Paths"][1]["SubDomain"])
-# print(len(dat["Results"][0]["Result"]["Paths"][1]["Technologies"]))
-# print(dat["Results"][0]["Result"]["Paths"][1]["Technologies"][0])
-# print(dat["Results"][0]["Result"]["Paths"][1]["Technologies"][1])
-# print(dat["Results"][0]["Result"]["Paths"][1]["Technologies"][2])
 
 
 
@@ -223,61 +169,3 @@ else:
 
         print( datJoin['paths_indexed_first'] )
 
-
-        # print( datPaths['paths_indexed_first'].iloc[ numpy.where( datPaths['paths_indexed_first'] == 6 )] )
-
-
-
-        # dat = dat.iloc[numpy.where(
-        #     (dat[colIsolate].dt.year <= isolate_yr_end.year) &
-        #     (dat[colIsolate].dt.year >= isolate_yr_start.year))[0]]
-
-
-
-        # #   Add column for datPaths columns
-        # #       paths_indexed_first
-        # #       paths_indexed_last
-        # datJoin['paths_indexed_first'] = datPaths['paths_indexed_first'].iloc[]
-
-
-
-
-
-
-
-        # # How many lookups do we have?
-        # nLookup = len(list(dat['Results']))
-        # # Initialize meta data
-        # homepage_url = [None]*nLookup
-        # company_name = [None]*nLookup
-        # company_category = [None]*nLookup
-        #
-        # first_update = [None]*nLookup
-        # last_update = [None]*nLookup
-        #
-        # # Get meta data
-        # for iLU in range(0,nLookup):
-        #     homepage_url[iLU] = dat['Results'][iLU]['Lookup']
-        #     company_name[iLU] = dat['Results'][iLU]['Meta']['CompanyName']
-        #     company_category[iLU] = dat['Results'][iLU]['Meta']['Vertical']
-        #
-        #     first_update[iLU] = dat['Results'][iLU]['FirstIndexed']
-        #     last_update[iLU] = dat['Results'][iLU]['LastIndexed']
-        #
-        #     # How many Paths?
-        #     nPath = len(list(dat['Results'][iLU]['Result']['Paths']))
-        #
-        #     # Initialize meta data
-        #     path_domain = [None]*nPath
-        #     path_first_update = [None]*nPath
-        #     path_last_update = [None]*nPath
-        #     path_nTech = [None]*nPath
-        #
-        #     # Get meta data
-        #     for iPath in range(0,nPath):
-        #         path_domain[iPath] = dat['Results'][iLU]['Result']['Paths'][iPath]['Domain']
-        #         path_first_update[iPath] = dat['Results'][iLU]['Result']['Paths'][iPath]['FirstIndexed']
-        #         path_last_update[iPath] = dat['Results'][iLU]['Result']['Paths'][iPath]['LastIndexed']
-        #         path_nTech[iPath] = len(list( dat['Results'][iLU]['Result']['Paths'][iPath]['Technologies'] ))
-        #
-        #     print(path_nTech)
