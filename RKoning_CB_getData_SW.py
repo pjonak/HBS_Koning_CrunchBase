@@ -10,17 +10,21 @@ import random
 import copy
 import urllib # send URL request - API interaction
 
+
+SW_gran = "weekly" # "daily", "weekly"
+SW_date_start = "2015-03"
+SW_date_end = "2017-02"
+
 I_grid = False
-I_print = True
+I_print = False
 I_log = True
 
 dataset_I_sample_rand = False
-dataset_nSample_rand = 1
+dataset_nSample_rand = 10
 
 dataset_I_sample = True
 dataset_nSample = 1
-
-
+# dataset_I_intel = True
 
 
 if I_grid:
@@ -34,11 +38,11 @@ else:
 # Identify where data is held
 if I_grid:
     folderPath_data = "dataset/"
-    folderPath_response = "BW_responses/"
+    folderPath_response = "SW_responses/"
     folderPath_keys = "keys/"
 else:
     folderPath_data = "dataset\\crunchbase_2017_02_06\\"
-    folderPath_response = "BW_responses\\"
+    folderPath_response = "SW_responses\\"
     folderPath_keys = "keys\\"
 
 # Which file are we looking to load?
@@ -73,69 +77,157 @@ def cleanWebsiteURL(website:str) -> str:
         website = website[4::]
     return website
 
-def bw_getKey() -> str:
+def sw_getKey() -> str:
     # Loads API key for SimilarWeb
     #   File must be named "sw.cnf"
     #   File must reside in the root of the project folder
-    hFile = open(folderPath_root + folderPath_keys + "bw.cnf")
+    hFile = open(folderPath_root + folderPath_keys + "sw.cnf")
     hReader = csv.reader(hFile,delimiter=',')
-    apiKey_bw = None
+    apiKey_sw = None
     for rowData in hReader:
         if rowData[0]=="api_key":
-            apiKey_bw = rowData[1]
+            apiKey_sw = rowData[1]
     hFile.close()
-    return apiKey_bw
+    return apiKey_sw
 
-def CB_buildURL_BW(website: str, company: str, apiKey_bw: str) -> (str, str):
+def CB_buildURL_SW(website: str, company: str, apiKey_sw: str) -> (str, str):
     # The URL is composed of the following parts:
-    #   base / domain = api.builtwith.com/
-    urlBase = "https://api.builtwith.com/"
+    #   base / domain = api.similarweb.com
+    #   version and type
+    #       For version 1, we use /v1/website/
+    #       For version 2, we use /v2/website/
+    #       For mobile, we use /Mobile/0/
+    #   endpoint
+    #   api_key
+    #   additional parameters
+    #       start date
+    #       end date
+    #       granularity
+    #           daily, weekly, monthly
+    #       main domain only?
+    #       output format, JSON (default) or XML
 
-    # Technology Categories index = True
-    # All else = False
-    bw_category = False
+    # if dataset_I_sample and dataset_I_intel and dataset_nSample == 1:
+    #     website = "intel.com"
+    #     print("!!")
+    #     print("using intel.com")
+    #     print("!!")
 
-    # All potential vertical values?
-    bw_verticals = False
 
-    # Last database update dates?
-    bw_update = False
+    urlBase = "https://api.similarweb.com/"
 
-    if bw_category:
-        urlCategory = "categoriesV4"
+    sw_category = "TotalTraffic"
+    sw_endpoint = "visits"
+
+    start_date = SW_date_start
+    end_date = SW_date_end
+
+    granularity = SW_gran
+
+    main_domain_only = False
+
+    urlFormat = "json"
+
+    # Check
+    I_validOpts = True
+    if sw_category == "TotalTraffic":
+        version_and_type = "v1/website/"
+        urlCategory = "total-traffic-and-engagement/"
+        if sw_endpoint == "visits":
+            urlEndpoint = "visits"
+        elif sw_endpoint == "pages_per_visit":
+            urlEndpoint = "pages-per-visit"
+        elif sw_endpoint == "average_visit_duration":
+            urlEndpoint = "average-visit-duration"
+        elif sw_endpoint == "bounce_rate":
+            urlEndpoint = "bounce-rate"
+        elif sw_endpoint == "visits_split":
+            urlEndpoint = "visits-split"
+        else:
+            I_validOpts = False
+            urlEndpoint = None
+            print("Unknown endpoint for category " + sw_category)
+            print("\t" + sw_endpoint)
+
+    elif sw_category == "DesktopTraffic":
+        version_and_type = "v1/website/"
+        urlCategory = "traffic-and-engagement/"
+        if sw_endpoint == "visits":
+            urlEndpoint = "visits"
+        elif sw_endpoint == "pages_per_visit":
+            urlEndpoint = "pages-per-visit"
+        elif sw_endpoint == "average_visit_duration":
+            urlEndpoint = "average-visit-duration"
+        elif sw_endpoint == "bounce_rate":
+            urlEndpoint = "bounce-rate"
+        elif sw_endpoint == "global_rank":
+            urlCategory = "global-rank"
+            urlEndpoint = "global-rank"
+        elif sw_endpoint == "geography_distribution":
+            urlCategory = "Geo"
+            urlEndpoint = "traffic-by-country"
+        elif sw_endpoint == "unique_visitors":
+            urlCategory = "unique-visitors"
+            urlEndpoint = "desktop_mau"
+        else:
+            I_validOpts = False
+            urlEndpoint = None
+            print("Unknown endpoint for category " + sw_category)
+            print("\t" + sw_endpoint)
+
+    elif sw_category == "WebTrafficSources":
+        I_validOpts = False
+        print("Not prepared to accept category " + sw_category)
+
+    elif sw_category == "DesktopOther":
+        I_validOpts = False
+        print("Not prepared to accept category " + sw_category)
+
+    elif sw_category == "MobileApp_and_MobileWeb":
+        I_validOpts = False
+        print("Not prepared to accept category " + sw_category)
+
     else:
-        urlCategory = "v11/api"
+        # Not ready
+        I_validOpts = False
+        print("Unknown category " + sw_category)
 
-    if bw_verticals:
-        urlVert = "VERTICALS=1"
+    if not I_validOpts:
+        print("Cannot build URL request")
+        return None, None
     else:
-        urlVert = None
+        urlRequest = urlBase + version_and_type + website + "/" + urlCategory + urlEndpoint + "?api_key=" + apiKey_sw
 
-    if bw_update:
-        urlUpdate = "UPDATE=1"
-    else:
-        urlUpdate = None
+        if start_date is not None:
+            urlRequest = urlRequest + "&start_date=" + start_date
+        if end_date is not None:
+            urlRequest = urlRequest + "&end_date=" + end_date
+        if main_domain_only is not None:
+            urlRequest = urlRequest + "&main_domain_only=" + str(main_domain_only).lower()
+        if granularity is not None:
+            urlRequest = urlRequest + "&granularity=" + granularity
 
-    urlRequest = urlBase + urlCategory + ".json" + "?KEY=" + apiKey_bw + "&LOOKUP=" + website
+        urlRequest = urlRequest + "&format=" + urlFormat
 
-    if urlVert is not None:
-        urlRequest = urlRequest + "&" + urlVert
-    if urlUpdate is not None:
-        urlRequest = urlRequest + "&" + urlUpdate
+        # Create filename for storing SimilarWeb response
+        if isinstance(company, float):
+            # Empty
+            company = website
 
-    if isinstance(company, float):
-        # Empty
-        company = website
+        filenameResponse = "sw__" + company.replace(" ","_").replace(",","_").replace(".","_").replace("/","_").replace("\\","_")
+        # filenameResponse = filenameResponse + urlEndpoint
+        # filenameResponse = "sw__" + website + "__" + urlCategory[0:-1] + "__" + urlEndpoint
+        # if start_date is not None:
+        #     filenameResponse = filenameResponse + "__start_" + start_date
+        # if end_date is not None:
+        #     filenameResponse = filenameResponse + "__end=" + end_date
+        # if granularity is not None:
+        #     filenameResponse = filenameResponse + "__" + granularity
 
-    # filenameResponse = "bw__" + company.replace(" ", "_") + urlCategory.replace("/","_")
-    filenameResponse = "bw__" + company.replace(" ", "_").replace(",", "_").replace(".", "_").replace("/", "_").replace("\\", "_")
-    if urlVert is not None:
-        filenameResponse = filenameResponse + "__VERTICALS"
-    if urlUpdate is not None:
-        filenameResponse = filenameResponse + "__UPDATE"
-    filenameResponse = filenameResponse + ".json"
+        # filenameResponse = filenameResponse + "." + urlFormat
+        filenameResponse = filenameResponse + ".json"
 
-    return urlRequest, filenameResponse
+        return urlRequest, filenameResponse
 
 def main():
 
@@ -143,7 +235,7 @@ def main():
         # Prepare log file
         #   Assume ending is ".py"
         logPath = folderPath_root + os.path.basename( os.path.realpath(__file__) )[0:-3] + ".log"
-        hFileLog = open(logPath, 'w', encoding="utf8")
+        hFileLog = open(logPath, 'w', encoding="ascii")
         hFileLog.write("Log file for:\n\t" + os.path.realpath(__file__) +"\n")
 
     # Verify file exists
@@ -222,73 +314,73 @@ def main():
 
 
         # Add 3 columns
-        #   bw_url - what is the request we will send?
-        #   bw_filename - where will we store the response?
-        #   bw_I_request - a flag to determine if we sent the request
-        #   bw_I_response - a flag to determine if we received a response
-        dat['bw_url'] = [None]*dat.shape[0]
-        dat['bw_filename'] = [None]*dat.shape[0]
-        dat['bw_I_request'] = [0] * dat.shape[0]
-        dat['bw_I_response'] = [0] * dat.shape[0]
+        #   sw_url - what is the request we will send?
+        #   sw_filename - where will we store the response?
+        #   sw_I_request - a flag to determine if we sent the request
+        #   sw_I_response - a flag to determine if we received a response
+        dat['sw_url'] = [None]*dat.shape[0]
+        dat['sw_filename'] = [None]*dat.shape[0]
+        dat['sw_I_request'] = [0] * dat.shape[0]
+        dat['sw_I_response'] = [0] * dat.shape[0]
 
         # Ready to build up queries
         #   Get API key
-        bw_apiKey = bw_getKey()
+        sw_apiKey = sw_getKey()
         #   Then store the query
         #   Finally add the API key before sending request
         pandas.options.mode.chained_assignment = None  # default='warn'
         if I_print or I_log:
-            tempMsg = "Building API requests: BuiltWith"
+            tempMsg = "Building API requests: SimilarWeb"
             if I_print:
                 print(tempMsg)
             if I_log:
                 hFileLog.write(tempMsg + "\n")
         for iRow in range(0, dat.shape[0]):
-            urlReq, filenameResponse = CB_buildURL_BW( cleanWebsiteURL(dat['homepage_url'].iloc[iRow]),
+            urlReq, filenameResponse = CB_buildURL_SW( cleanWebsiteURL(dat['homepage_url'].iloc[iRow]),
                                                       dat['company_name'].iloc[iRow],
-                                                      bw_apiKey)
+                                                      sw_apiKey)
 
             if urlReq is not None:
-                dat['bw_url'].iloc[iRow] = urlReq
-                dat['bw_filename'].iloc[iRow] = filenameResponse
+                dat['sw_url'].iloc[iRow] = urlReq
+                dat['sw_filename'].iloc[iRow] = filenameResponse
         pandas.options.mode.chained_assignment = 'warn'
 
         # Check to see if we already have a response for any of these
         pandas.options.mode.chained_assignment = None  # default='warn'
         for iRow in range(0, dat.shape[0]):
-            if os.path.exists(folderPath_root + folderPath_response + dat['bw_filename'].iloc[iRow]):
+            if os.path.exists(folderPath_root + folderPath_response + dat['sw_filename'].iloc[iRow]):
                 # File exists!
-                # dat['bw_I_request'].iloc[iRow] = 1
-                dat['bw_I_response'].iloc[iRow] = 1
+                dat['sw_I_response'].iloc[iRow] = 1
         pandas.options.mode.chained_assignment = 'warn'
 
         # Ready
         if I_print or I_log:
-            tempMsg = "Sending BW requests:"
+            tempMsg = "Sending SW requests:"
             if I_print:
                 print(tempMsg)
             if I_log:
                 hFileLog.write(tempMsg + "\n")
         pandas.options.mode.chained_assignment = None  # default='warn'
         for iRow in range(0, dat.shape[0]):
-            if dat['bw_I_response'].iloc[iRow] == 1:
+            if dat['sw_I_response'].iloc[iRow] == 1:
                 if I_print or I_log:
                     tempMsg = "\tHave response for " + cleanWebsiteURL(dat['homepage_url'].iloc[iRow])
                     if I_print:
                         print(tempMsg)
                     if I_log:
                         hFileLog.write(tempMsg + "\n")
-            elif dat['bw_I_response'].iloc[iRow] == 0:
+            elif dat['sw_I_response'].iloc[iRow] == 0:
                 if I_print or I_log:
-                    tempMsg = "\t" + dat['bw_url'].iloc[iRow]
+                    tempMsg = "\t" + dat['sw_url'].iloc[iRow]
                     if I_print:
                         print(tempMsg)
                     if I_log:
                         hFileLog.write(tempMsg + "\n")
+
                 try:
-                    dat['bw_I_request'].iloc[iRow] = 1
-                    hJSON = json.loads(urllib.request.urlopen( dat['bw_url'].iloc[iRow] ).read().decode('utf-8'))
-                    dat['bw_I_response'].iloc[iRow] = 1
+                    dat['sw_I_request'].iloc[iRow] = 1
+                    hJSON = json.loads(urllib.request.urlopen( dat['sw_url'].iloc[iRow] ).read().decode('utf-8'))
+                    dat['sw_I_response'].iloc[iRow] = 1
                     I_json = True
                 except Exception as e:
                     if I_print or I_log:
@@ -299,12 +391,12 @@ def main():
                             hFileLog.write(tempMsg + "\n")
                     I_json = False
 
-                # Save BW data to file
+                # Save sW data to file
                 #   Leave empty if no response received
-                hFile = _io.open(folderPath_root + folderPath_response + dat['bw_filename'].iloc[iRow], "w")
+                hFile = _io.open(folderPath_root + folderPath_response + dat['sw_filename'].iloc[iRow], "w")
                 if I_json:
                     if I_print or I_log:
-                        tempMsg = "\t\tSaving BW data to file"
+                        tempMsg = "\t\tSaving SW data to file"
                         if I_print:
                             print(tempMsg)
                         if I_log:
@@ -342,8 +434,6 @@ def main():
     if I_log:
         hFileLog.write("End")
         hFileLog.close()
-    return
-
     return
 
 if I_grid:
