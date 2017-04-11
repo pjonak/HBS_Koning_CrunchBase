@@ -5,7 +5,9 @@ import MySQLdb
 from MySQLdb.connections import Connection as mysqlConnection
 import math
 import numpy
+import _io
 import json
+import datetime
 
 
 
@@ -275,21 +277,58 @@ def buildSQL_insertEntry(dbName: str, tableName: str, dat: pandas.core.frame.Dat
     # Format is
     #       INSERT INTO [table] ([col1] , [col2] , ... ) VALUES ([val1] , [val2] , ... )
 
-    # Get column headers
-    colList = dat.index.values
     # Build initial SQL command
     cmdStr = "INSERT INTO " + dbName + "." + tableName + " ("
+
+    # Get column headers
+    if dat.shape[0] == 1 and dat.shape[1] > 1:
+        I_col = True
+    else:
+        I_col = False
+
+    if I_col:
+        colList = dat.columns.values
+    else:
+        colList = dat.index.values
+
+    # Remove columns if value is nan
+    delList = None
+    iCol = 0
+    for colName in colList:
+        if (I_col and ( isinstance(dat[colName].iloc[0], float) and numpy.isnan(dat[colName].iloc[0]) ) ) or \
+                (not I_col and ( isinstance(dat.ix[colName], float) and numpy.isnan(dat.ix[colName]) ) ):
+            if delList is None:
+                delList = [iCol]
+            else:
+                delList = delList + [iCol]
+        iCol += 1
+
+    if delList is not None:
+        for idx in delList[::-1]:
+            if I_col:
+                dat = dat.drop(colList[idx], 1)
+            else:
+                dat = dat.drop(colList[idx], 0)
+            colList = numpy.delete(colList,idx)
+
     # Add columns
     for colName in colList:
         cmdStr += colName + ","
     # Add values
     cmdStr = cmdStr[0:-1] + ") VALUES ("
     for colName in colList:
-        if isinstance(dat.ix[colName], str):
-            # Note: dates may be read as strings
-            cmdStr += "'" + dat.ix[colName] + "',"
+        if I_col:
+            if isinstance(dat[colName].iloc[0], str):
+                # Note: dates may be read as strings
+                cmdStr += "'" + dat[colName].iloc[0] + "',"
+            else:
+                cmdStr += str(dat[colName].iloc[0]) + ","
         else:
-            cmdStr += str(dat.ix[colName]) + ","
+            if isinstance(dat.ix[colName], str):
+                # Note: dates may be read as strings
+                cmdStr += "'" + dat.ix[colName] + "',"
+            else:
+                cmdStr += str(dat.ix[colName]) + ","
     cmdStr = cmdStr[0:-1] + ");"
 
     return cmdStr
@@ -300,6 +339,9 @@ def buildSQL_insertEntry(dbName: str, tableName: str, dat: pandas.core.frame.Dat
 def validateDB_CB_Orgs(
         hConn: MySQLdb.connections.Connection,dbName: str, tableName: str,
         folderPath: str, fileName: str) -> (bool, str):
+
+    datOrg = None # Initialize
+
     fullPath = os.path.join(folderPath,fileName)
     fullPath_dbSetup = fullPath[0:-4] + "__dbSetup.txt"
     if not os.path.exists(fullPath):
@@ -391,6 +433,9 @@ def validateDB_CB_Orgs(
                 datOrg.iloc[iRow] = Orgs_cleanup_byType(datOrg.iloc[iRow], datHeader, colList_clean, colIdxList_clean)
             pandas.options.mode.chained_assignment = 'warn'
 
+            # Add info on BW and SW response files
+            datOrg, I_flag2, errMsg2 = CB_Orgs_responseFiles(folderPath_BW, folderPath_SW, datOrg)
+
             if I_saveOrg:
                 datOrg.to_csv(fullPath, sep=',', encoding='utf-8')
 
@@ -405,11 +450,8 @@ def validateDB_CB_Orgs(
                 I_updateList = numpy.asarray([False] * datOrg.shape[0])
 
                 for iOrg in range(0, datOrg.shape[0]):
-                    dat_match = pandas.DataFrame({
-                        'uuid': numpy.asarray([datOrg['uuid'].iloc[iOrg]], dtype=str),
-                    })
-
-                    cmdStr = buildSQL_getEntry(dbName, tableName, dat_match)
+                    cmdStr = buildSQL_getEntry(dbName, tableName, pandas.DataFrame({
+                        'uuid': numpy.asarray([datOrg['uuid'].iloc[iOrg]], dtype=str) }) )
                     resSQL = pandas.read_sql(cmdStr, hConn)
                     if resSQL.empty:
                         # Entry doesn't exist
@@ -439,18 +481,66 @@ def validateDB_CB_Orgs(
     return I_flag, errMsg
 
 def CB_Orgs_responseFiles(
-        hConn: MySQLdb.connections.Connection,dbName: str, tableName: str,
-        fp_BW: str, fp_SW: str) -> (bool, str):
+        fp_BW: str, fp_SW: str, datOrg: pandas.core.frame.DataFrame) -> (pandas.core.frame.DataFrame, bool, str):
     I_flag = False
     errMsg = ""
 
-    
+    fileName_dat_BW = "dat__intel.csv"
+    fileName_dat_SW = "dat__intel.csv"
 
-    return I_flag, errMsg
+    # Ready to add BuiltWith data to Org data
+    #   Prepare CB Org data columns
+    colList = ['bw_filename', 'sw_filename', 'bw_I_response', 'sw_I_response']
+
+    # Get list of current column names
+    #   If one of the new columns isn't present, add it
+    colList_orig = numpy.asarray(list(datOrg))
+    for colName in colList:
+        if not any(colList_orig == colName):
+            datOrg[colName] = numpy.nan
+
+    # Get filenames and I_response values
+    #   Load response dat file first, then SW dat file
+    #       Match each row to Organizations data
+    #       Record filename and I_response
+    #       Verify I_response
+
+    folderList_response = [fp_BW, fp_SW]
+    fileList_response = [fileName_dat_BW, fileName_dat_SW]
+    colList_fn_response = ['bw_filename', 'sw_filename']
+    colList_fn_Org = ['bw_filename', 'sw_filename']
+    colList_I_response = ['bw_I_response', 'sw_I_response']
+    colList_I_Org = ['bw_I_response', 'sw_I_response']
+
+    pandas.options.mode.chained_assignment = None
+    for i in range(0, 2):
+        fullPath = os.path.join(folderList_response[i],fileList_response[i])
+        if not os.path.exists(fullPath):
+            print("Unable to find dat file: " + fullPath)
+        else:
+            datResponse = pandas.read_csv(fullPath, sep=',', index_col=0, header=0, encoding='utf-8')
+
+            # Now we need to match each row to Organizations data
+            #   We preserved the index column
+            #   There is less data in the response file so start with that
+            for iRow in range(0, datResponse.shape[0]):
+                # Get index
+                idx = int(datResponse.iloc[iRow].name)
+                # Record filename and I_response
+                datOrg[colList_fn_Org[i]].ix[idx] = datResponse[colList_fn_response[i]].iloc[iRow]
+                datOrg[colList_I_Org[i]].ix[idx] = datResponse[colList_I_response[i]].iloc[iRow]
+                # Verify I_response
+                if datOrg[colList_I_Org[i]].ix[idx] == 1:
+                    fullPath = os.path.join(folderList_response[i], datOrg[colList_fn_Org[i]].ix[idx])
+                    if not os.path.exists(fullPath):
+                        datOrg[colList_I_Org[i]].ix[idx] = 0
+    pandas.options.mode.chained_assignment = 'warn'
+
+    return datOrg, I_flag, errMsg
 
 
 def SW_Visit(
-        hConn: MySQLdb.connections.Connection, dbName: str, tableName: list,
+        hConn: MySQLdb.connections.Connection, dbName: str, tableName: list, tableNameOrg: str,
         folderPath: str) -> (bool, str):
     I_flag = False
     errMsg = ""
@@ -463,7 +553,6 @@ def SW_Visit(
         colList_match = ['id_lookup', 'visit_granularity', 'visit_date']
 
     fn_info = os.path.join(folderPath_tables, "table_" + tableName[iTable] + "__dbSetup.txt")
-    fn_dat = os.path.join(folderPath_tables, "table_" + tableName[iTable] + ".csv")
 
     # Validate we have our table within the database
     #   Create otherwise
@@ -490,77 +579,87 @@ def SW_Visit(
         I_table[iTable] = True
 
     if I_table[iTable]:
-        # Insert data
-        if not os.path.exists(fn_dat):
-            errMsg = "No data found for " + tableName[iTable] + "\n" + fn_dat
-        else:
-            # Load data
-            dat = pandas.read_csv(fn_dat,
-                                  sep=',', index_col=0, header=0, encoding='utf-8')
+        # Get min and max id_lookups from Organizations table
+        cmdStr = "SELECT MAX(id_lookup), MIN(id_lookup) FROM " + dbName + "." + tableNameOrg + ";"
+        resSQL = pandas.read_sql(cmdStr, hConn)
 
-            I_addList = numpy.asarray([False] * dat.shape[0])
+        id_lookup_min = resSQL['MIN(id_lookup)'].iloc[0]
+        id_lookup_max = resSQL['MAX(id_lookup)'].iloc[0]
 
-            for id in numpy.unique(dat['id_lookup']):
-                # Check to see if this ID is already present in the database
-                #   format of dat_match
-                #           [col1]      [col2]
-                #   idx     [val1.1]    [val2.1]
-                dat_match = pandas.DataFrame({'id_lookup': numpy.asarray([id], dtype=int)})
-
-                cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], dat_match)
+        # Go through all IDs
+        for id in range(id_lookup_min, 1+id_lookup_max):
+            cmdStr = buildSQL_getEntry(dbName, tableNameOrg,
+                                       pandas.DataFrame({'id_lookup': numpy.asarray([id], dtype=int)}) )
+            try:
                 resSQL = pandas.read_sql(cmdStr, hConn)
-                if resSQL.empty:
-                    # id_lookup not present, add all
-                    I_addList[numpy.where(dat['id_lookup'] == id)[0]] = True
+                I_validID = True
+            except:
+                I_validID = False
+
+            if I_validID and resSQL['sw_I_response'].iloc[0]==1:
+                # Load file
+                filename = resSQL['sw_filename'].iloc[0]
+                fullPath = os.path.join(folderPath_SW,filename)
+                if not os.path.exists(fullPath):
+                    errMsg = "Unable to find SW response file " + fullPath
                 else:
-                    # id_look is present, check to see if granularity is there
-                    for gran in numpy.unique(dat['visit_granularity'].iloc[
-                                                 numpy.where(dat['id_lookup'] == id)[0]]):
-                        dat_match = pandas.DataFrame({
+                    hFile = _io.open(fullPath)
+                    datJ = json.loads(hFile.read())
+                    hFile.close()
+
+                    # Get granularity
+                    granularity = datJ['meta']['request']['granularity']
+
+                    # Get visit data
+                    iVisit = 0
+                    visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+                    visitDate_min = visitDate
+                    visitDate_max = visitDate
+                    if len(datJ['visits']) > 1:
+                        for iVisit in range(1, len(datJ['visits'])):
+                            visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+
+                            if visitDate < visitDate_min:
+                                visitDate_min = visitDate
+                            elif visitDate > visitDate_max:
+                                visitDate_max = visitDate
+
+                    # Check to see if database has entries for both min and max dates already at this granularity
+                    cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                'id_lookup': numpy.asarray([id], dtype=int),
+                                'visit_granularity': numpy.asarray([granularity], dtype=str),
+                                'visit_date': numpy.asarray([visitDate_min], dtype=str) }) )
+                    resSQL = pandas.read_sql(cmdStr, hConn)
+                    if resSQL.empty:
+                        # Combination not present, add all
+                        I_add = True
+                    else:
+                        cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
                             'id_lookup': numpy.asarray([id], dtype=int),
-                            'visit_granularity': numpy.asarray([gran], dtype=str)
-                        })
-                        cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], dat_match)
+                            'visit_granularity': numpy.asarray([granularity], dtype=str),
+                            'visit_date': numpy.asarray([visitDate_max], dtype=str)}))
                         resSQL = pandas.read_sql(cmdStr, hConn)
-
-                        idxList = numpy.where(
-                            dat['visit_granularity'].iloc[
-                                numpy.where(dat['id_lookup'] == id)[0]] == gran )[0]
-
                         if resSQL.empty:
-                            # No entry for this id_lookup and granularity
-                            I_addList[idxList] = True
+                            # Combination not present, add all
+                            I_add = True
                         else:
-                            # Have entry for this id_lookup and granularity
-                            #   Search by date
-                            for idx in idxList:
-                                dat_match = pandas.DataFrame({
+                            I_add = False
+
+                    if I_add:
+                        for iVisit in range(1, len(datJ['visits'])):
+                            visitCt = datJ['visits'][iVisit]['visits']
+                            visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+
+                            # Try to insert
+                            cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
                                     'id_lookup': numpy.asarray([id], dtype=int),
-                                    'visit_granularity': numpy.asarray([gran], dtype=str),
-                                    'visit_date': numpy.asarray([ dat['visit_date'].iloc[idx] ], dtype=str)
-                                })
-                                cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], dat_match)
+                                    'visit_granularity': numpy.asarray([granularity], dtype=str),
+                                    'visit_date': numpy.asarray([visitDate], dtype=str),
+                                    'visit_count': numpy.asarray([visitCt], dtype=str) }) )
+                            try:
                                 resSQL = pandas.read_sql(cmdStr, hConn)
-
-                                if resSQL.empty:
-                                    # No entry for this id_lookup and granularity and date
-                                    I_addList[idx] = True
-
-            if any(I_addList):
-                for i in range(0, len(I_addList)):
-                    if I_addList[i]:
-                        # Insert row
-
-                        cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], dat.iloc[i])
-                        hCursor = hConn.cursor()
-                        try:
-                            hCursor.execute(cmdStr)
-                            resSQL = hCursor.fetchall()
-                        except Exception as e:
-                            print("Error adding " + dat['id_lookup'].iloc[i] + " at " +
-                                  dat['visit_date'].iloc[i] + "\n" + str(e))
-
-
+                            except Exception as e:
+                                errMsg = "Unable to add SW data for id_lookup=" + str(id) + ", date=" + str(visitDate) + " -Error:" + str(e)
     return I_flag, errMsg
 
 
@@ -608,33 +707,26 @@ def main():
 
         if I_conn:
             # Make sure CrunchBase Organizations data is loaded
-            tableName = "Organizations"
+            tableNameOrg = "Organizations"
             I_flag, errMsg = validateDB_CB_Orgs(
-                hConn, dbName, tableName,
+                hConn, dbName, tableNameOrg,
                 folderPath_CB, fileName_CB)
 
             if I_flag:
                 print(I_flag)
                 print(errMsg)
+
             else:
-                # Check if CrunchBase Organizations data has recorded BW and SW filenames + I_response values
-                I_flag, errMsg = CB_Orgs_responseFiles(
-                    hConn, dbName, tableName,
-                    folderPath_BW, folderPath_SW)
+                # Ready to add SimilarWeb and BuiltWith data
+                #   SimilarWeb
+                tableName = ["Visit"]
 
+                I_flag, errMsg = SW_Visit(
+                    hConn, dbName, tableName, tableNameOrg,
+                    folderPath_tables)
 
-
-
-                # # Ready to add SimilarWeb and BuiltWith data
-                # #   SimilarWeb
-                # tableName = ["Visit"]
-                #
-                # I_flag, errMsg = SW_Visit(
-                #     hConn, dbName, tableName,
-                #     folderPath_tables)
-                #
-                # print(I_flag)
-                # print(errMsg)
+                print(I_flag)
+                print(errMsg)
 
 
 
