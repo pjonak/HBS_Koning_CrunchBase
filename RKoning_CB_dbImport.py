@@ -23,7 +23,7 @@ cfg_db_filepath = "dbConfig.txt"
 
 
 I_grid = False
-
+I_log = 3 # 0 = none, 1 = print, 2 = file, 3 = print+file
 
 # Which file are we looking to load?
 if I_grid:
@@ -41,6 +41,51 @@ colTypeList = '{"founded_on": "date", "first_funding_on": "date", ' + \
               '"employee_count": "range"}'
 
 
+
+
+def pjLog_open(logSettings: int = 3) -> _io.TextIOWrapper:
+    if logSettings == 2 or logSettings == 3:
+        # Start logging
+        #   Assume current code ends in .py
+        logPath = os.path.join(folderPath_root,
+                               os.path.basename(os.path.realpath(__file__))[0:-3] +\
+                               datetime.datetime.now().strftime("%Y-%m-%d") + \
+                               ".log" )
+        if os.path.exists(logPath):
+            iRun = 1
+            logPath = os.path.join(folderPath_root,
+                                   os.path.basename(os.path.realpath(__file__))[0:-3] + \
+                                   datetime.datetime.now().strftime("%Y-%m-%d") + \
+                                   "__run" + str(iRun) + ".log")
+            while os.path.exists(logPath):
+                iRun += 1
+                logPath = os.path.join(folderPath_root,
+                                       os.path.basename(os.path.realpath(__file__))[0:-3] + \
+                                       datetime.datetime.now().strftime("%Y-%m-%d") + \
+                                       "__run" + str(iRun) + ".log")
+        hFile = open(logPath, 'w', encoding="utf8")
+        logMsg = "Log file for:\n\t" + os.path.realpath(__file__)
+        pjLog_write(logMsg, I_log, hFile)
+    else:
+        hFile = None
+    return hFile
+
+def pjLog_close(logSetting: int = 3, hFile: _io.TextIOWrapper = None):
+    logMsg = "Closing Logger"
+    if logSetting == 1 or logSetting == 3:
+        print(logMsg)
+    if (logSetting == 2 or logSetting == 3) and hFile is not None:
+        hFile.write(logMsg + "\n")
+        hFile.close()
+    return
+
+def pjLog_write(logMsg: str, logSetting: int = 3, hFile: _io.TextIOWrapper = None):
+    if logSetting > 0:
+        if logSetting == 1 or logSetting == 3:
+            print(logMsg)
+        if (logSetting == 2 or logSetting == 3) and hFile is not None:
+            hFile.write(logMsg + "\n")
+    return
 
 def colName_2_colIdx__pType(colList: list, matchJSON: dict) -> list:
     # Go through each item in colList to find
@@ -338,18 +383,28 @@ def buildSQL_insertEntry(dbName: str, tableName: str, dat: pandas.core.frame.Dat
 
 def validateDB_CB_Orgs(
         hConn: MySQLdb.connections.Connection,dbName: str, tableName: str,
-        folderPath: str, fileName: str) -> (bool, str):
+        folderPath: str, fileName: str,
+        logSetting: int = 3, hFileLog: _io.TextIOWrapper = None) -> (bool, str):
+
+    I_flag = False
+    errMsg = ""
 
     datOrg = None # Initialize
+
+    logMsg = "function: validateDB_CB_Orgs"
+    logMsg += "\n\n\t!! Not validating or updating previous entries !!\n"
+    pjLog_write(logMsg, I_log, hFileLog)
 
     fullPath = os.path.join(folderPath,fileName)
     fullPath_dbSetup = fullPath[0:-4] + "__dbSetup.txt"
     if not os.path.exists(fullPath):
         I_flag = True
-        errMsg = "Unable to locate CB Organizations data at " + fullPath
+        logMsg = "\tUnable to locate CB Organizations data\n\t\t" + fullPath
+        pjLog_write(logMsg, I_log, hFileLog)
     elif not os.path.exists(fullPath_dbSetup):
         I_flag = True
-        errMsg = "Unable to locate DB setup file for CB Organizations: " + fullPath_dbSetup
+        logMsg = "\tUnable to locate DB setup file for CB Organizations\n\t\t" + fullPath_dbSetup
+        pjLog_write(logMsg, I_log, hFileLog)
     else:
         I_flag = False
         errMsg = ""
@@ -380,7 +435,8 @@ def validateDB_CB_Orgs(
             resSQL = hCursor.fetchall()
             if len(resSQL) != 0:
                 I_flag = True
-                errMsg = "Error creating CB Organizations table"
+                logMsg = "\tError creating CB Organizations table\n\t\t" + cmdStr
+                pjLog_write(logMsg, I_log, hFileLog)
             else:
                 id_lookup_max = 10001
         else:
@@ -392,7 +448,8 @@ def validateDB_CB_Orgs(
 
             if resSQL.empty:
                 I_flag = True
-                errMsg = "Error querying CB Organizations table with: " + cmdStr
+                logMsg = "\tError querying CB Organizations table with:\n\t\t" + cmdStr
+                pjLog_write(logMsg, I_log, hFileLog)
             else:
                 id_lookup_max = resSQL['MAX(id_lookup)'].iloc[0]
                 if id_lookup_max is None:
@@ -422,6 +479,8 @@ def validateDB_CB_Orgs(
 
 
             # Clean up
+            logMsg = "\tCleaning up dates and employee_count"
+            pjLog_write(logMsg, I_log, hFileLog)
             #   Dates
             #   employee_count
             datHeader = list(datOrg)
@@ -433,11 +492,20 @@ def validateDB_CB_Orgs(
                 datOrg.iloc[iRow] = Orgs_cleanup_byType(datOrg.iloc[iRow], datHeader, colList_clean, colIdxList_clean)
             pandas.options.mode.chained_assignment = 'warn'
 
+            logMsg ="\t\tDone"
+            pjLog_write(logMsg, I_log, hFileLog)
+
             # Add info on BW and SW response files
-            datOrg, I_flag2, errMsg2 = CB_Orgs_responseFiles(folderPath_BW, folderPath_SW, datOrg)
+            datOrg, I_flag2, errMsg2 = CB_Orgs_responseFiles(folderPath_BW, folderPath_SW, datOrg, I_log, hFileLog)
 
             if I_saveOrg:
+                logMsg = "\tSaving Organizations data"
+                pjLog_write(logMsg, I_log, hFileLog)
+
                 datOrg.to_csv(fullPath, sep=',', encoding='utf-8')
+
+                logMsg = "\t\tDone"
+                pjLog_write(logMsg, I_log, hFileLog)
 
             # Update database according to CB Orgs file
             #   First find out which entries are to be added and which are to be updated
@@ -472,7 +540,8 @@ def validateDB_CB_Orgs(
                             hCursor.execute(cmdStr)
                             resSQL = hCursor.fetchall()
                         except Exception as e:
-                            print("Error adding " + datOrg['domain'].iloc[i] + "\n" + str(e))
+                            logMsg = "\tError adding " + datOrg['domain'].iloc[i] + "\n\t\t" + str(e)
+                            pjLog_write(logMsg, I_log, hFileLog)
 
             # if I_update_any:
 
@@ -481,9 +550,13 @@ def validateDB_CB_Orgs(
     return I_flag, errMsg
 
 def CB_Orgs_responseFiles(
-        fp_BW: str, fp_SW: str, datOrg: pandas.core.frame.DataFrame) -> (pandas.core.frame.DataFrame, bool, str):
+        fp_BW: str, fp_SW: str, datOrg: pandas.core.frame.DataFrame,
+        logSetting: int = 3, hFileLog: _io.TextIOWrapper = None) -> (pandas.core.frame.DataFrame, bool, str):
     I_flag = False
     errMsg = ""
+
+    logMsg = "function: CB_Orgs_responseFiles"
+    pjLog_write(logMsg, I_log, hFileLog)
 
     fileName_dat_BW = "dat__intel.csv"
     fileName_dat_SW = "dat__intel.csv"
@@ -516,7 +589,8 @@ def CB_Orgs_responseFiles(
     for i in range(0, 2):
         fullPath = os.path.join(folderList_response[i],fileList_response[i])
         if not os.path.exists(fullPath):
-            print("Unable to find dat file: " + fullPath)
+            logMsg = "\tUnable to find dat file\n\t\t" + fullPath
+            pjLog_write(logMsg, I_log, hFileLog)
         else:
             datResponse = pandas.read_csv(fullPath, sep=',', index_col=0, header=0, encoding='utf-8')
 
@@ -541,9 +615,13 @@ def CB_Orgs_responseFiles(
 
 def SW_Visit(
         hConn: MySQLdb.connections.Connection, dbName: str, tableName: list, tableNameOrg: str,
-        folderPath: str) -> (bool, str):
+        folderPath: str,
+        logSetting: int = 3, hFileLog: _io.TextIOWrapper = None) -> (bool, str):
     I_flag = False
     errMsg = ""
+
+    logMsg = "function: Sw_Visit"
+    pjLog_write(logMsg, I_log, hFileLog)
 
     I_table = [False] * len(tableName)
 
@@ -574,7 +652,8 @@ def SW_Visit(
                 I_table[iTable] = True
             else:
                 I_flag = True
-                errMsg = "Error creating table " + tableName[iTable]
+                logMsg = "\tError creating table " + tableName[iTable]
+                pjLog_write(logMsg, I_log, hFileLog)
     else:
         I_table[iTable] = True
 
@@ -601,7 +680,8 @@ def SW_Visit(
                 filename = resSQL['sw_filename'].iloc[0]
                 fullPath = os.path.join(folderPath_SW,filename)
                 if not os.path.exists(fullPath):
-                    errMsg = "Unable to find SW response file " + fullPath
+                    logMsg = "\tUnable to find SW response file\n\t\t" + fullPath
+                    pjLog_write(logMsg, I_log, hFileLog)
                 else:
                     hFile = _io.open(fullPath)
                     datJ = json.loads(hFile.read())
@@ -659,17 +739,22 @@ def SW_Visit(
                             try:
                                 resSQL = pandas.read_sql(cmdStr, hConn)
                             except Exception as e:
-                                errMsg = "Unable to add SW data for id_lookup=" + str(id) + ", date=" + str(visitDate) + " -Error:" + str(e)
+                                logMsg = "\tUnable to add SW data for id_lookup=" + str(id) + \
+                                         ", date=" + str(visitDate) + "\n\t\t" + str(e)
+                                pjLog_write(logMsg, I_log, hFileLog)
     return I_flag, errMsg
 
 
 def main():
+    # Start logging
+    hFileLog = pjLog_open(I_log)
 
     # Connect to database
     fullPath = os.path.join(folderPath_cfg, cfg_db_filepath)
     if not os.path.exists(fullPath):
         cfg_db = None
-        errMsg = "Unable to locate database connection settings at " + fullPath
+        logMsg = "Unable to locate database connection settings at " + fullPath
+        pjLog_write(logMsg, I_log, hFileLog)
     else:
         cfg_db = pandas.read_csv(fullPath)
 
@@ -687,19 +772,19 @@ def main():
                                     user=cfg_db['value']['username'],
                                     password=cfg_db['value']['password'])
             I_conn = True
+            dbName = cfg_db['value']['database']
         except Exception as e:
             I_conn = False
-            print("Error connecting to database")
-            print("\t" + str(e))
-
-        dbName = cfg_db['value']['database']
+            logMsg = "Error connecting to database: " + str(e)
+            pjLog_write(logMsg, I_log, hFileLog)
 
         if I_conn:
             # Pretty sure we should be in the database but just in case verify it is in the information schema
             cmdStr = buildSQL_existDB(dbName)
             resSQL = pandas.read_sql(cmdStr, hConn)
             if resSQL.empty:
-                print("Error: Connected to server but unable to access database")
+                logMsg = "Error: Connected to server but unable to access database"
+                pjLog_write(logMsg, I_log, hFileLog)
 
                 # Close connection
                 hConn.close()
@@ -710,11 +795,12 @@ def main():
             tableNameOrg = "Organizations"
             I_flag, errMsg = validateDB_CB_Orgs(
                 hConn, dbName, tableNameOrg,
-                folderPath_CB, fileName_CB)
+                folderPath_CB, fileName_CB,
+                I_log, hFileLog)
 
             if I_flag:
-                print(I_flag)
-                print(errMsg)
+                logMsg = "end of function: validateDB_CB_Orgs\n\tFlagged\n\tMessage: " + errMsg
+                pjLog_write(logMsg, I_log, hFileLog)
 
             else:
                 # Ready to add SimilarWeb and BuiltWith data
@@ -723,10 +809,12 @@ def main():
 
                 I_flag, errMsg = SW_Visit(
                     hConn, dbName, tableName, tableNameOrg,
-                    folderPath_tables)
+                    folderPath_tables,
+                    I_log, hFileLog)
 
-                print(I_flag)
-                print(errMsg)
+                if I_flag:
+                    logMsg = "end of function: validateDB_CB_Orgs\n\tFlagged\n\tMessage: " + errMsg
+                    pjLog_write(logMsg, I_log, hFileLog)
 
 
 
@@ -828,6 +916,8 @@ def main():
 
         if I_conn:
             hConn.close()
+
+    pjLog_close(I_log, hFileLog)
 
     return
 if __name__ == '__main__':
