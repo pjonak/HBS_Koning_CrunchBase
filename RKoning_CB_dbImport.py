@@ -3,37 +3,58 @@ import os
 import pandas
 import MySQLdb
 from MySQLdb.connections import Connection as mysqlConnection
+from sshtunnel import SSHTunnelForwarder
 import math
 import numpy
 import _io
 import json
 import datetime
+import copy
 
+
+I_intelTest = False
+I_grid = False
+I_log = 3 # 0 = none, 1 = print, 2 = file, 3 = print+file
 
 
 folderPath_root = os.path.abspath( os.path.join( os.path.dirname( os.path.realpath(__file__) ) , os.pardir) )
-folderPath_CB = os.path.join(folderPath_root,"dataset","crunchbase_2017_02_06")
-folderPath_BW = os.path.join(folderPath_root,"BW_responses")
-folderPath_SW = os.path.join(folderPath_root,"SW_responses")
+if I_grid:
+    folderPath_CB = os.path.join(folderPath_root, "dataset")
+else:
+    folderPath_CB = os.path.join(folderPath_root,"dataset","crunchbase_2017_02_06")
+if I_grid:
+    folderPath_BW = os.path.join(folderPath_root, "BW_responses")
+    folderPath_SW = os.path.join(folderPath_root, "SW_responses")
+else:
+    if I_intelTest:
+        folderPath_BW = os.path.join(folderPath_root, "BW_responses")
+        folderPath_SW = os.path.join(folderPath_root, "SW_responses")
+    else:
+        folderPath_BW = os.path.join(folderPath_root,"BW_responses","run_0","response")
+        folderPath_SW = os.path.join(folderPath_root,"SW_responses","run_0","response")
 folderPath_tables = os.path.join(folderPath_root,"tables")
 folderPath_cfg = os.path.join(folderPath_root,"keys")
 
 cfg_db_filepath = "dbConfig.txt"
+cfg_ssh_filepath = "sshConfig.txt"
 
 
+# For Grid
+path_ssl_ca = "/etc/mysql-ssl/ca-cert.pem"
+path_ssl_cert = "/etc/mysql-ssl/client-cert.pem"
+path_ssl_key = "/etc/mysql-ssl/client-key.pem"
 
-I_grid = False
-I_log = 3 # 0 = none, 1 = print, 2 = file, 3 = print+file
+
 
 # Which file are we looking to load?
 if I_grid:
     fileName_CB = "organizations"
     fileName_CB = fileName_CB + "_trim.csv"
-
 else:
-    fileName_CB = "organizations"
-    fileName_CB = "organizations_sample"
-    fileName_CB = fileName_CB + "_intel.csv"
+    if I_intelTest:
+        fileName_CB = "organizations_sample_intel.csv"
+    else:
+        fileName_CB = "organizations_trim.csv"
 
 
 
@@ -176,21 +197,26 @@ def Orgs_cleanup_byType_range(dat: str) -> str:
     #       e.g. 1-10
     #   the CSV table shows this as 'Jan-10' or '10-Jan'
 
-    # Remove excess white space
-    dat = dat.replace(" ", "")
 
-    if len(dat) >= 4:
-        if not dat[0].isdigit() or not dat[-1].isdigit():
-            # Given either 'Nov-50' or '10-Jan'
-            if dat[0] == 'J' or dat[-1] == 'n' or dat[-1] == 'y':
-                return "1-10"
-            elif dat[0] == 'N' or dat[-1] == 'v' or dat[-1] == 'r':
-                return "11-50"
+    # Sometimes get nan
+    if isinstance(dat, str):
+        # Remove excess white space
+        dat = dat.replace(" ", "")
+
+        if len(dat) >= 4:
+            if not dat[0].isdigit() or not dat[-1].isdigit():
+                # Given either 'Nov-50' or '10-Jan'
+                if dat[0] == 'J' or dat[-1] == 'n' or dat[-1] == 'y':
+                    return "1-10"
+                elif dat[0] == 'N' or dat[-1] == 'v' or dat[-1] == 'r':
+                    return "11-50"
+                else:
+                    print("CB_specialColType_range: Unknown range: " + dat)
+                    return ""
             else:
-                print("CB_specialColType_range: Unknown range: " + dat)
-                return ""
+                return dat
         else:
-            return dat
+            return ""
     else:
         return ""
 
@@ -212,7 +238,7 @@ def dispSQL(cmdStr: str) -> str:
     else:
         # Need to add at least 1 line
         #   How many lines do we need in total?
-        nLine = math.ceil(lenStr/perLine)
+        nLine = int(math.ceil(lenStr/perLine))
 
         # Format very first line
         dispStr = "\t\t" + cmdStr[0:perLine]
@@ -239,7 +265,7 @@ def buildSQL_existTable(dbName: str, tableName: str) -> str:
     return cmdStr
 
 def buildSQL_createTable(
-        dbName: str, tableName: str, tableInfo: pandas.core.frame.DataFrame) -> str:
+        dbName: str, tableName: str, tableInfo: pandas.core.frame.DataFrame, colList_pk: list = None) -> str:
     # Get column headers
     colList = tableInfo.index.values
 
@@ -251,10 +277,18 @@ def buildSQL_createTable(
     for colName in colList:
         cmdStr += colName + " " + tableInfo['colType'].ix[colName] + ","
 
-    if tableName == "Organizations":
-        cmdStr += "PRIMARY KEY (uuid),"
-    elif tableName == "Visit":
-        cmdStr += "PRIMARY KEY (id_lookup,visit_granularity,visit_date),"
+    if colList_pk is not None:
+        if len(colList_pk) == 1:
+            cmdStr += "PRIMARY KEY (" + colList_pk[0] + "),"
+        else:
+            cmdStr += "PRIMARY KEY ("
+            for colName in colList_pk:
+                cmdStr += colName + ","
+            cmdStr = cmdStr[0:-1] + "),"
+    # if tableName == "Organizations":
+    #     cmdStr += "PRIMARY KEY (uuid),"
+    # elif tableName == "Visit":
+    #     cmdStr += "PRIMARY KEY (id_lookup,visit_granularity,visit_date),"
 
     cmdStr = cmdStr[0:-1] + ") ENGINE=MyISAM;"
     return cmdStr
@@ -306,15 +340,15 @@ def buildSQL_getEntry(dbName: str, tableName: str, datMatch: pandas.core.frame.D
         if I_col:
             if isinstance(datMatch[colName].iloc[0], str):
                 # Note: dates may be read as strings
-                cmdStr += colName + "='" + datMatch[colName].iloc[0] + "' AND "
+                cmdStr += colName + "='" + buildSQL_cleanStr( datMatch[colName].iloc[0] ) + "' AND "
             else:
-                cmdStr += colName + "=" + str(datMatch[colName].iloc[0]) + " AND "
+                cmdStr += colName + "=" + buildSQL_cleanStr( str(datMatch[colName].iloc[0]) ) + " AND "
         else:
             if isinstance(datMatch.ix[colName], str):
                 # Note: dates may be read as strings
-                cmdStr += colName + "='" + datMatch.ix[colName] + "' AND "
+                cmdStr += colName + "='" + buildSQL_cleanStr( datMatch.ix[colName] ) + "' AND "
             else:
-                cmdStr += colName + "=" + str(datMatch.ix[colName]) + " AND "
+                cmdStr += colName + "=" + buildSQL_cleanStr( str(datMatch.ix[colName]) ) + " AND "
     cmdStr = cmdStr[0:-5] + ";"
     return cmdStr
 
@@ -365,21 +399,34 @@ def buildSQL_insertEntry(dbName: str, tableName: str, dat: pandas.core.frame.Dat
         if I_col:
             if isinstance(dat[colName].iloc[0], str):
                 # Note: dates may be read as strings
-                cmdStr += "'" + dat[colName].iloc[0] + "',"
+                cmdStr += "'" + buildSQL_cleanStr( dat[colName].iloc[0] ) + "',"
             else:
-                cmdStr += str(dat[colName].iloc[0]) + ","
+                cmdStr += buildSQL_cleanStr( str(dat[colName].iloc[0]) ) + ","
         else:
             if isinstance(dat.ix[colName], str):
                 # Note: dates may be read as strings
-                cmdStr += "'" + dat.ix[colName] + "',"
+                cmdStr += "'" + buildSQL_cleanStr( dat.ix[colName] ) + "',"
             else:
-                cmdStr += str(dat.ix[colName]) + ","
+                cmdStr += buildSQL_cleanStr( str(dat.ix[colName]) ) + ","
     cmdStr = cmdStr[0:-1] + ");"
 
     return cmdStr
 
+def buildSQL_getNumberOfRows(dbName: str, tableName: str) -> str:
+    cmdStr = 'SELECT TABLE_ROWS FROM information_schema.TABLES WHERE TABLE_SCHEMA="' + \
+             dbName + '" AND TABLE_NAME="' + tableName + '";'
+    return cmdStr
 
+def buildSQL_getTableColumns(dbName: str, tableName: str) -> str:
+    cmdStr = 'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA="' + \
+             dbName + '" AND TABLE_NAME="' + tableName + '";'
+    return cmdStr
 
+def buildSQL_cleanStr(cmdStr: str) -> str:
+    return cmdStr.encode('utf8').decode('ascii', 'ignore').replace(';','_').replace('"','_').replace("'",'_')
+
+def strCleanup1(strIn: str) -> str:
+    return strIn.encode('utf8').decode('ascii', 'ignore').replace(" ","_").replace("/","_").replace("\\","_").replace(":","_").lower()
 
 def validateDB_CB_Orgs(
         hConn: MySQLdb.connections.Connection,dbName: str, tableName: str,
@@ -428,7 +475,7 @@ def validateDB_CB_Orgs(
             # Need to create table
             I_createTable = True
             # Build SQL command
-            cmdStr = buildSQL_createTable(dbName, tableName, info_table)
+            cmdStr = buildSQL_createTable(dbName, tableName, info_table, ["uuid"])
             # Get results (cannot use pandas_read_sql here, results in error)
             hCursor = hConn.cursor()
             hCursor.execute(cmdStr)
@@ -441,6 +488,16 @@ def validateDB_CB_Orgs(
                 id_lookup_max = 10001
         else:
             I_createTable = False
+
+            # Get current number of rows and current columns
+            cmdStr = buildSQL_getNumberOfRows(dbName,tableName)
+            resSQL = pandas.read_sql(cmdStr, hConn)
+            db_nRow = resSQL['TABLE_ROWS'].iloc[0]
+
+            cmdStr = buildSQL_getTableColumns(dbName,tableName)
+            resSQL = pandas.read_sql(cmdStr, hConn)
+            db_colList = list(resSQL['COLUMN_NAME'])
+
             # Get max id_lookup
             #   Query
             cmdStr = "SELECT MAX(id_lookup) FROM " + dbName + "." + tableName + ";"
@@ -477,27 +534,6 @@ def validateDB_CB_Orgs(
                 else:
                     I_saveOrg = False
 
-
-            # Clean up
-            logMsg = "\tCleaning up dates and employee_count"
-            pjLog_write(logMsg, I_log, hFileLog)
-            #   Dates
-            #   employee_count
-            datHeader = list(datOrg)
-            colList_clean = json.loads(colTypeList)
-            colIdxList_clean = colName_2_colIdx__pType(datHeader, colList_clean)
-
-            pandas.options.mode.chained_assignment = None  # default='warn'
-            for iRow in range(0, datOrg.shape[0]):
-                datOrg.iloc[iRow] = Orgs_cleanup_byType(datOrg.iloc[iRow], datHeader, colList_clean, colIdxList_clean)
-            pandas.options.mode.chained_assignment = 'warn'
-
-            logMsg ="\t\tDone"
-            pjLog_write(logMsg, I_log, hFileLog)
-
-            # Add info on BW and SW response files
-            datOrg, I_flag2, errMsg2 = CB_Orgs_responseFiles(folderPath_BW, folderPath_SW, datOrg, I_log, hFileLog)
-
             if I_saveOrg:
                 logMsg = "\tSaving Organizations data"
                 pjLog_write(logMsg, I_log, hFileLog)
@@ -506,6 +542,11 @@ def validateDB_CB_Orgs(
 
                 logMsg = "\t\tDone"
                 pjLog_write(logMsg, I_log, hFileLog)
+
+
+            # Add info on BW and SW response files
+            datOrg, I_flag2, errMsg2 = CB_Orgs_responseFiles(folderPath_BW, folderPath_SW, datOrg, I_log, hFileLog)
+
 
             # Update database according to CB Orgs file
             #   First find out which entries are to be added and which are to be updated
@@ -529,19 +570,36 @@ def validateDB_CB_Orgs(
                         # Entry does exist, validate
 
 
+            # Will need to do some clean-up if adding or updating
+            #   Dates
+            #   employee_count
+            datHeader = list(datOrg)
+            colList_clean = json.loads(colTypeList)
+            colIdxList_clean = colName_2_colIdx__pType(datHeader, colList_clean)
+
             if any(I_addList):
-                for i in range(0, datOrg.shape[0]):
-                    if I_addList[i]:
-                        # Add entry to database
-                        cmdStr = buildSQL_insertEntry(dbName, tableName, datOrg[colList_db].iloc[i])
+                logMsg = "\tAdd Organization entries"
+                pjLog_write(logMsg, I_log, hFileLog)
+                pandas.options.mode.chained_assignment = None  # default='warn'
+                for iRow in range(0, datOrg.shape[0]):
+                    if I_addList[iRow]:
+                        # Want to add this entry
+                        #   Clean up
+                        #   Add entry to database
+                        cmdStr = buildSQL_insertEntry(dbName, tableName,
+                                                      Orgs_cleanup_byType(datOrg[colList_db].iloc[iRow],
+                                                                   datHeader, colList_clean,colIdxList_clean) )
                         hCursor = hConn.cursor()
 
                         try:
                             hCursor.execute(cmdStr)
                             resSQL = hCursor.fetchall()
                         except Exception as e:
-                            logMsg = "\tError adding " + datOrg['domain'].iloc[i] + "\n\t\t" + str(e)
+                            logMsg = "\tError adding " + datOrg['domain'].iloc[iRow] + "\n\t\t" + cmdStr + "\n\t\t" + str(e)
                             pjLog_write(logMsg, I_log, hFileLog)
+                logMsg = "\t\tDone adding entries"
+                pjLog_write(logMsg, I_log, hFileLog)
+                pandas.options.mode.chained_assignment = 'warn'
 
             # if I_update_any:
 
@@ -558,8 +616,12 @@ def CB_Orgs_responseFiles(
     logMsg = "function: CB_Orgs_responseFiles"
     pjLog_write(logMsg, I_log, hFileLog)
 
-    fileName_dat_BW = "dat__intel.csv"
-    fileName_dat_SW = "dat__intel.csv"
+    if I_intelTest:
+        fileName_dat_BW = "dat__intel.csv"
+        fileName_dat_SW = "dat__intel.csv"
+    else:
+        fileName_dat_BW = "dat_2017_03_30.csv"
+        fileName_dat_SW = "dat_2017_04_01.csv"
 
     # Ready to add BuiltWith data to Org data
     #   Prepare CB Org data columns
@@ -623,12 +685,15 @@ def SW_Visit(
     logMsg = "function: Sw_Visit"
     pjLog_write(logMsg, I_log, hFileLog)
 
+    colName_response = "sw_I_response"
+    colName_filename = "sw_filename"
+
     I_table = [False] * len(tableName)
 
     iTable = 0
 
     if tableName[iTable] == "Visit":
-        colList_match = ['id_lookup', 'visit_granularity', 'visit_date']
+        colList_pk = ['id_lookup', 'visit_granularity', 'visit_date']
 
     fn_info = os.path.join(folderPath_tables, "table_" + tableName[iTable] + "__dbSetup.txt")
 
@@ -643,7 +708,7 @@ def SW_Visit(
             # Get table info
             info_table = pandas.read_csv(fn_info)
             # Build SQL command
-            cmdStr = buildSQL_createTable(dbName, tableName[iTable], info_table)
+            cmdStr = buildSQL_createTable(dbName, tableName[iTable], info_table, colList_pk)
             # Get results (cannot use pandas_read_sql here, results in error)
             hCursor = hConn.cursor()
             hCursor.execute(cmdStr)
@@ -675,9 +740,9 @@ def SW_Visit(
             except:
                 I_validID = False
 
-            if I_validID and resSQL['sw_I_response'].iloc[0]==1:
+            if I_validID and resSQL[colName_response].iloc[0]==1:
                 # Load file
-                filename = resSQL['sw_filename'].iloc[0]
+                filename = resSQL[colName_filename].iloc[0]
                 fullPath = os.path.join(folderPath_SW,filename)
                 if not os.path.exists(fullPath):
                     logMsg = "\tUnable to find SW response file\n\t\t" + fullPath
@@ -745,6 +810,258 @@ def SW_Visit(
     return I_flag, errMsg
 
 
+def BW_Tech(
+        hConn: MySQLdb.connections.Connection, dbName: str, tableName: list, tableNameOrg: str,
+        folderPath: str,
+        logSetting: int = 3, hFileLog: _io.TextIOWrapper = None) -> (bool, str):
+    I_flag = False
+    errMsg = ""
+
+    logMsg = "function: BW_Tech"
+    pjLog_write(logMsg, I_log, hFileLog)
+
+
+    colName_response = "bw_I_response"
+    colName_filename = "bw_filename"
+
+    tableName = numpy.asarray(tableName) # will be easier to work with later than a list
+
+    I_table = [False] * len(tableName)
+
+    for iTable in range(0, len(tableName)):
+
+        if tableName[iTable] == "Tech":
+            colList_pk = ['id_tech', 'id_techTag', 'id_techCat']
+        elif tableName[iTable] == "TechTag":
+            colList_pk = ['id_techTag']
+        elif tableName[iTable] == "TechCat":
+            colList_pk = ['id_techCat']
+        elif tableName[iTable] == "DomainTech":
+            colList_pk = ['id_lookup']
+        else:
+            colList_pk = None
+
+        fn_info = os.path.join(folderPath_tables, "table_" + tableName[iTable] + "__dbSetup.txt")
+
+        # Validate we have our table within the database
+        #   Create otherwise
+        cmdStr = buildSQL_existTable(dbName, tableName[iTable])
+        resSQL = pandas.read_sql(cmdStr, hConn)
+        if resSQL.empty:
+            # Need to create table
+            #   Confirm we have table settings
+            if os.path.exists(fn_info):
+                # Get table info
+                info_table = pandas.read_csv(fn_info)
+                # Build SQL command
+                cmdStr = buildSQL_createTable(dbName, tableName[iTable], info_table, colList_pk)
+                # Get results (cannot use pandas_read_sql here, results in error)
+                hCursor = hConn.cursor()
+                hCursor.execute(cmdStr)
+                resSQL = hCursor.fetchall()
+                if len(resSQL) == 0:
+                    I_table[iTable] = True
+                else:
+                    I_flag = True
+                    logMsg = "\tError creating table " + tableName[iTable] + "\n\t\t" + cmdStr
+                    pjLog_write(logMsg, I_log, hFileLog)
+        else:
+            I_table[iTable] = True
+
+    if not any(I_table):
+        I_flag = True
+        errMsg = "No BW tables"
+    else:
+        # Get min and max id_lookups from Organizations table
+        cmdStr = "SELECT MAX(id_lookup), MIN(id_lookup) FROM " + dbName + "." + tableNameOrg + ";"
+        resSQL = pandas.read_sql(cmdStr, hConn)
+
+        id_lookup_min = resSQL['MIN(id_lookup)'].iloc[0]
+        id_lookup_max = resSQL['MAX(id_lookup)'].iloc[0]
+
+        logMsg = "Loading and acting on BuiltWith response files"
+        pjLog_write(logMsg, I_log, hFileLog)
+
+        if not any(tableName=="metaBW") or not I_table[tableName=="metaBW"]:
+            logMsg = "\t!! Will not be storing BW meta data !!\n\t\tTable unavailable or not requested\n"
+            pjLog_write(logMsg, I_log, hFileLog)
+
+        if not all(I_table[tableName!="metaBW"]):
+            logMsg = "\t!! Will not be storing BW data related to technologies !!\n\t\tAll tables must be available and requested together\n"
+            pjLog_write(logMsg, I_log, hFileLog)
+        else:
+            # Get max
+            #   id_tech
+            #   id_techTag
+            #   id_techCat
+            for tname in tableName[tableName!="metaBW"]:
+                if tname.lower() == "tech":
+                    cmdStr = "SELECT MAX(id_tech) FROM " + dbName + "." + tname + ";"
+                    resSQL = pandas.read_sql(cmdStr, hConn)
+                    id_tech_max = resSQL['MAX(id_tech)'].iloc[0]
+                    if id_tech_max is None:
+                        id_tech_max = 2000
+                elif tname.lower() == "techtag":
+                    cmdStr = "SELECT MAX(id_techTag) FROM " + dbName + "." + tname + ";"
+                    resSQL = pandas.read_sql(cmdStr, hConn)
+                    id_techTag_max = resSQL['MAX(id_techTag)'].iloc[0]
+                    if id_techTag_max is None:
+                        id_techTag_max = 1000
+                elif tname.lower() == "techcat":
+                    cmdStr = "SELECT MAX(id_techCat) FROM " + dbName + "." + tname + ";"
+                    resSQL = pandas.read_sql(cmdStr, hConn)
+                    id_techCat_max = resSQL['MAX(id_techCat)'].iloc[0]
+                    if id_techCat_max is None:
+                        id_techCat_max = 0
+
+
+        # Go through all IDs
+        for id in range(id_lookup_min, 1 + id_lookup_max):
+            pjLog_write(logMsg, I_log, hFileLog)
+
+            cmdStr = buildSQL_getEntry(dbName, tableNameOrg,
+                                       pandas.DataFrame({'id_lookup': numpy.asarray([id], dtype=int)}))
+            try:
+                resSQL = pandas.read_sql(cmdStr, hConn)
+                I_validID = True
+            except:
+                I_validID = False
+
+            if I_validID and resSQL[colName_response].iloc[0] == 1:
+                resSQL_id = copy.deepcopy(resSQL)
+
+                # Load file
+                filename = resSQL[colName_filename].iloc[0]
+                fullPath = os.path.join(folderPath_BW, filename)
+                if not os.path.exists(fullPath):
+                    logMsg = "\tUnable to find BW response file for id_lookup=" + str(id) + "\n\t\t" + fullPath
+                    pjLog_write(logMsg, I_log, hFileLog)
+                else:
+                    hFile = _io.open(fullPath)
+                    datJ = json.loads(hFile.read())
+                    hFile.close()
+
+                    # Validate that the response has data
+                    #   Gotta love those double negatives!
+                    if not not datJ['Errors']:
+                        logMsg = "\tError detected within BW response file for id_lookup=" + str(id)
+                        pjLog_write(logMsg, I_log, hFileLog)
+                    else:
+                        if len(list(datJ['Results'])) == 1:
+                            iLU = 0
+                        else:
+                            iLU = -1
+
+                            logMsg = "\tMultiple results within BW response file for id_lookup=" + str(id)
+                            pjLog_write(logMsg, I_log, hFileLog)
+
+                            for i in range(0, len(list(datJ['Results']))):
+                                if datJ['Results'][i]['Lookup'].lower() == resSQL_id['domain'].iloc[0]:
+                                    iLU = i
+
+                                    logMsg = "\t\tUsing iLU=" + str(iLU)
+                                    pjLog_write(logMsg, I_log, hFileLog)
+
+                                    break
+
+                        if iLU == -1:
+                            logMsg = "\t\t!! No valid domain matchup found for id_lookup=" + str(id)
+                            pjLog_write(logMsg, I_log, hFileLog)
+                        else:
+                            # We know which ['Results'] we are adding
+                            #   Update each table
+                            #       Do metaBW separately, the rest together
+                            if any(tableName=="metaBW") and I_table[tableName=="metaBW"]:
+                                iTable = int( numpy.arange(len(tableName))[tableName=="metaBW"] )
+                                # Do we already have this entry?
+                                cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                    'id_lookup': numpy.asarray([id], dtype=int) }) )
+                                resSQL = pandas.read_sql(cmdStr, hConn)
+                                if resSQL.empty:
+                                    # Entry not present, try to insert
+
+                                    indexFirst = int(datJ['Results'][iLU]['FirstIndexed']) / 1000
+                                    indexLast = int(datJ['Results'][iLU]['LastIndexed']) / 1000
+
+                                    cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                        'id_lookup': numpy.asarray([id], dtype=int),
+                                        'companyname': numpy.asarray([ datJ['Results'][iLU]['Meta']['CompanyName'] ], dtype=str),
+                                        'vertical': numpy.asarray([ datJ['Results'][iLU]['Meta']['Vertical'] ], dtype=str),
+                                        'arank': numpy.asarray([ datJ['Results'][iLU]['Meta']['ARank'] ], dtype=int),
+                                        'qrank': numpy.asarray([ datJ['Results'][iLU]['Meta']['QRank'] ], dtype=int),
+                                        'IndexedFirst': numpy.asarray([indexFirst], dtype=int),
+                                        'IndexedFirst_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexFirst).date() ], dtype=str),
+                                        'IndexedLast': numpy.asarray([indexLast], dtype=int),
+                                        'IndexedLast_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexLast).date() ], dtype=str) }) )
+                                    try:
+                                        resSQL = pandas.read_sql(cmdStr, hConn)
+                                    except Exception as e:
+                                        logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
+                                                 "\n\t\t" + str(e)
+                                        pjLog_write(logMsg, I_log, hFileLog)
+
+                            # Can now do the others if they are available
+                            if all(I_table[tableName != "metaBW"]):
+                                # Get tech, tag and category
+                                for iPaths in range(0, len(list(datJ['Results'][iLU]['Result']['Paths']))):
+
+                                    for iTech in range(0, len(
+                                            list(datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'])
+                                            ) ):
+
+                                        I_addName = False
+                                        techName = strCleanup1(
+                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                'Name'] )
+                                        detectedFirst = int(
+                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                'FirstDetected'] ) / 1000
+                                        detectedLast = int(
+                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                'LastDetected'] ) / 1000
+
+                                        I_addTag = False
+                                        techTag = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Tag']
+                                        if techTag is None:
+                                            techTag = "none"
+                                        else:
+                                            techTag = strCleanup1(techTag)
+
+                                        techCatList = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                            'Categories']
+                                        if techCatList is None:
+                                            techCatList = "None"
+                                        if isinstance(techCatList, list):
+                                            for iCat in range(0, len(techCatList)):
+                                                techCatList[iCat] = strCleanup1(techCatList[iCat])
+                                        else:
+                                            techCatList = [strCleanup1(techCatList)]
+
+                                        # Want to convert name, tag and cat to IDs
+                                        #   Initialize IDs for tag and category
+                                        id_tech = None
+                                        id_tag = None
+                                        idList_cat = [None] * len(techCatList)
+
+                                        # Check to see if we have the Tag
+                                        cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                            'name_techTag': numpy.asarray([techTag], dtype=str)}))
+                                        resSQL = pandas.read_sql(cmdStr, hConn)
+                                        if resSQL.empty:
+                                            # Entry not present, try to insert
+                                            id_tag = id_techTag_max+1
+
+
+
+                                        else:
+                                            # Get
+                                            id_tag = int( resSQL['id_techTag'].iloc[0] )
+
+
+
+    return I_flag, errMsg
+
+
 def main():
     # Start logging
     hFileLog = pjLog_open(I_log)
@@ -758,6 +1075,18 @@ def main():
     else:
         cfg_db = pandas.read_csv(fullPath)
 
+    # fullPath = os.path.join(folderPath_cfg, cfg_ssh_filepath)
+    # if not os.path.exists(fullPath):
+    #     cfg_grid = None
+    #     logMsg = "Unable to locate SSH connection settings at " + fullPath
+    #     pjLog_write(logMsg, I_log, hFileLog)
+    # else:
+    #     cfg_grid = pandas.read_csv(fullPath)
+    #
+    # print(cfg_grid["value"]["host"])
+
+    # # Use with local machine to remote DB
+    # #     No longer working???
     # with SSHTunnelForwarder(
     #         (cfg_grid["value"]["host"], int(cfg_grid["value"]["port"])),
     #         ssh_password=cfg_grid["value"]["password"],
@@ -767,10 +1096,20 @@ def main():
     #                 int(cfg_db["value"]["port"]))) as server:
     if True:
         try:
-            hConn = MySQLdb.connect(host=cfg_db['value']['host'],
-                                    database=cfg_db['value']['database'],
-                                    user=cfg_db['value']['username'],
-                                    password=cfg_db['value']['password'])
+            if I_grid:
+                hConn = MySQLdb.connect(host=cfg_db['value']['host'],
+                                        database=cfg_db['value']['database'],
+                                        user=cfg_db['value']['username'],
+                                        password=cfg_db['value']['password'],
+                                        ssl={'ca': path_ssl_ca,
+                                             'cert': path_ssl_cert,
+                                             'key': path_ssl_key} )
+            else:
+                hConn = MySQLdb.connect(host=cfg_db['value']['host'],
+                                        database=cfg_db['value']['database'],
+                                        user=cfg_db['value']['username'],
+                                        password=cfg_db['value']['password'] )
+
             I_conn = True
             dbName = cfg_db['value']['database']
         except Exception as e:
@@ -813,106 +1152,19 @@ def main():
                     I_log, hFileLog)
 
                 if I_flag:
-                    logMsg = "end of function: validateDB_CB_Orgs\n\tFlagged\n\tMessage: " + errMsg
+                    logMsg = "end of function: SW_Visits\n\tFlagged\n\tMessage: " + errMsg
                     pjLog_write(logMsg, I_log, hFileLog)
 
 
+                tableName = ["metaBW","Tech", "TechTag", "TechCat", "DomainTech"]
+                I_flag, errMsg = BW_Tech(
+                    hConn, dbName, tableName, tableNameOrg,
+                    folderPath_tables,
+                    I_log, hFileLog)
 
-
-
-
-
-
-
-
-            # folderPath = "C:\\Users\\pjonak\\Documents\\Projects\\RKoning\\Crunchbase_SimilarWeb_BuiltWith\\tables\\"
-            # tableName = ["Visit"]
-            #
-            # I_table = [False]*len(tableName)
-            #
-            #
-            # colList_match = ['id_lookup','visit_granularity','visit_date']
-            #
-            # iTable = 0
-            # fn_info = folderPath + "table_" + tableName[iTable] + "_info.txt"
-            # fn_dat = folderPath + "table_" + tableName[iTable] + ".csv"
-            #
-            # # Validate we have our table within the database
-            # #   Create otherwise
-            # cmdStr = buildSQL_existTable(dbName, tableName[iTable])
-            # resSQL = pandas.read_sql(cmdStr, hConn)
-            # if resSQL.empty:
-            #     # Need to create table
-            #     #   Confirm we have table settings
-            #     if os.path.exists(fn_info):
-            #         # Get table info
-            #         info_table = pandas.read_csv(fn_info)
-            #         # Build SQL command
-            #         cmdStr = buildSQL_createTable(dbName, tableName[iTable], info_table)
-            #         # Get results (cannot use pandas_read_sql here, results in error)
-            #         hCursor = hConn.cursor()
-            #         hCursor.execute(cmdStr)
-            #         resSQL = hCursor.fetchall()
-            #         if len(resSQL) == 0:
-            #             I_table[iTable] = True
-            #         else:
-            #             print("Error creating table")
-            # else:
-            #     I_table[iTable] = True
-            #
-            #
-            # if I_table[iTable]:
-            #     # Insert data
-            #     #   Load data
-            #     if os.path.exists(fn_dat):
-            #         dat = pandas.read_csv(fn_dat,
-            #                                 sep=',', index_col=0, header=0, encoding='utf-8')
-            #
-            #         I_add_any = False
-            #         I_addList = numpy.asarray( [False]*dat.shape[0] )
-            #
-            #         for id in numpy.unique(dat['id_lookup']):
-            #             # Check to see if this ID is already present
-            #             #   format of dat_match
-            #             #           [col1]      [col2]
-            #             #   idx     [val1.1]    [val2.1]
-            #             dat_match = pandas.DataFrame({'id_lookup': numpy.asarray([id], dtype=int)})
-            #
-            #             cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], dat_match)
-            #             resSQL = pandas.read_sql(cmdStr, hConn)
-            #             if resSQL.empty:
-            #                 # id_lookup not present, add all
-            #                 if not I_add_any:
-            #                     I_add_any = True
-            #                 I_addList[numpy.where( dat['id_lookup'] == id )[0]] = True
-            #             else:
-            #                 # id_look is present, check to see if granularity is there
-            #                 for gran in numpy.unique(dat['visit_granularity'].iloc[
-            #                         numpy.where(dat['id_lookup'] == id)[0] ]):
-            #                     dat_match = pandas.DataFrame({
-            #                         'id_lookup': numpy.asarray([id], dtype=int),
-            #                         'visit_granularity': numpy.asarray([gran], dtype=str)
-            #                     })
-            #                     cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], dat_match)
-            #                     resSQL = pandas.read_sql(cmdStr, hConn)
-            #
-            #                     print(gran)
-            #                     print(resSQL)
-            #
-            #             break
-            #
-            #         if I_add_any:
-            #             for i in range(0, len(I_addList)):
-            #                 if I_addList[i]:
-            #                     # Insert row
-            #
-            #                     cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], dat.iloc[i])
-            #                     hCursor = hConn.cursor()
-            #                     hCursor.execute(cmdStr)
-            #                     resSQL = hCursor.fetchall()
-            #                     break
-
-
+                if I_flag:
+                    logMsg = "end of function: BW_Tech\n\tFlagged\n\tMessage: " + errMsg
+                    pjLog_write(logMsg, I_log, hFileLog)
 
         if I_conn:
             hConn.close()
