@@ -764,72 +764,98 @@ def SW_Visit(
             if I_validID and resSQL[colName_response].iloc[0]==1:
                 # Load file
                 filename = resSQL[colName_filename].iloc[0]
+
+                # Sometimes the filename is broken?
+                if isinstance(filename,str) and len(filename)>30 and filename[-5::] != ".json":
+                    logMsg = "\tWarning: incomplete response filename for id_lookup=" + str(id) + "\n\t\t" + filename
+                    pjLog_write(logMsg, I_log, hFileLog)
+
+                    if filename[-4::] == ".jso":
+                        filename += "n"
+                        logMsg = "\t\tUpdated filename = " + filename
+                        pjLog_write(logMsg, I_log, hFileLog)
+                    elif filename[-3::] == ".js":
+                        filename += "on"
+                        logMsg = "\t\tUpdated filename = " + filename
+                        pjLog_write(logMsg, I_log, hFileLog)
+                    elif filename [-2::] == ".j":
+                        filename += "son"
+                        logMsg = "\t\tUpdated filename = " + filename
+                        pjLog_write(logMsg, I_log, hFileLog)
+
                 fullPath = os.path.join(folderPath_SW,filename)
                 if not os.path.exists(fullPath):
                     logMsg = "\tUnable to find SW response file\n\t\t" + fullPath
                     pjLog_write(logMsg, I_log, hFileLog)
                 else:
                     hFile = _io.open(fullPath)
-                    datJ = json.loads(hFile.read())
+                    try:
+                        datJ = json.loads(hFile.read())
+                        I_read = True
+                    except Exception as e:
+                        I_read = False
+                        logMsg = "\tUnable to read SW response file\n\t\t" + fullPath
+                        pjLog_write(logMsg, I_log, hFileLog)
                     hFile.close()
 
-                    # Get granularity
-                    granularity = datJ['meta']['request']['granularity']
+                    if I_read:
+                        # Get granularity
+                        granularity = datJ['meta']['request']['granularity']
 
-                    # Get visit data
-                    iVisit = 0
-                    visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
-                    visitDate_min = visitDate
-                    visitDate_max = visitDate
-                    if len(datJ['visits']) > 1:
-                        for iVisit in range(1, len(datJ['visits'])):
-                            visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+                        # Get visit data
+                        iVisit = 0
+                        visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+                        visitDate_min = visitDate
+                        visitDate_max = visitDate
+                        if len(datJ['visits']) > 1:
+                            for iVisit in range(1, len(datJ['visits'])):
+                                visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
 
-                            if visitDate < visitDate_min:
-                                visitDate_min = visitDate
-                            elif visitDate > visitDate_max:
-                                visitDate_max = visitDate
+                                if visitDate < visitDate_min:
+                                    visitDate_min = visitDate
+                                elif visitDate > visitDate_max:
+                                    visitDate_max = visitDate
 
-                    # Check to see if database has entries for both min and max dates already at this granularity
-                    cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
-                                'id_lookup': numpy.asarray([id], dtype=int),
-                                'visit_granularity': numpy.asarray([granularity], dtype=str),
-                                'visit_date': numpy.asarray([visitDate_min], dtype=str) }) )
-                    resSQL = pandas.read_sql(cmdStr, hConn)
-                    if resSQL.empty:
-                        # Combination not present, add all
-                        I_add = True
-                    else:
+                        # Check to see if database has entries for both min and max dates already at this granularity
                         cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
-                            'id_lookup': numpy.asarray([id], dtype=int),
-                            'visit_granularity': numpy.asarray([granularity], dtype=str),
-                            'visit_date': numpy.asarray([visitDate_max], dtype=str)}))
+                                    'id_lookup': numpy.asarray([id], dtype=int),
+                                    'visit_granularity': numpy.asarray([granularity], dtype=str),
+                                    'visit_date': numpy.asarray([visitDate_min], dtype=str) }) )
                         resSQL = pandas.read_sql(cmdStr, hConn)
                         if resSQL.empty:
                             # Combination not present, add all
                             I_add = True
                         else:
-                            I_add = False
+                            cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                'id_lookup': numpy.asarray([id], dtype=int),
+                                'visit_granularity': numpy.asarray([granularity], dtype=str),
+                                'visit_date': numpy.asarray([visitDate_max], dtype=str)}))
+                            resSQL = pandas.read_sql(cmdStr, hConn)
+                            if resSQL.empty:
+                                # Combination not present, add all
+                                I_add = True
+                            else:
+                                I_add = False
 
-                    if I_add:
-                        for iVisit in range(1, len(datJ['visits'])):
-                            visitCt = datJ['visits'][iVisit]['visits']
-                            visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
+                        if I_add:
+                            for iVisit in range(1, len(datJ['visits'])):
+                                visitCt = datJ['visits'][iVisit]['visits']
+                                visitDate = datetime.datetime.strptime(datJ['visits'][iVisit]['date'], "%Y-%m-%d").date()
 
-                            # Try to insert
-                            cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
-                                    'id_lookup': numpy.asarray([id], dtype=int),
-                                    'visit_granularity': numpy.asarray([granularity], dtype=str),
-                                    'visit_date': numpy.asarray([visitDate], dtype=str),
-                                    'visit_count': numpy.asarray([visitCt], dtype=str) }) )
-                            hCursor = hConn.cursor()
-                            try:
-                                hCursor.execute(cmdStr)
-                                resSQL = hCursor.fetchall()
-                            except Exception as e:
-                                logMsg = "\tUnable to add SW data for id_lookup=" + str(id) + \
-                                         ", date=" + str(visitDate) + "\n\t\t" + cmdStr + "\n\t\t" + str(e)
-                                pjLog_write(logMsg, I_log, hFileLog)
+                                # Try to insert
+                                cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                        'id_lookup': numpy.asarray([id], dtype=int),
+                                        'visit_granularity': numpy.asarray([granularity], dtype=str),
+                                        'visit_date': numpy.asarray([visitDate], dtype=str),
+                                        'visit_count': numpy.asarray([visitCt], dtype=str) }) )
+                                hCursor = hConn.cursor()
+                                try:
+                                    hCursor.execute(cmdStr)
+                                    resSQL = hCursor.fetchall()
+                                except Exception as e:
+                                    logMsg = "\tUnable to add SW data for id_lookup=" + str(id) + \
+                                             ", date=" + str(visitDate) + "\n\t\t" + cmdStr + "\n\t\t" + str(e)
+                                    pjLog_write(logMsg, I_log, hFileLog)
     return I_flag, errMsg
 
 
@@ -961,132 +987,139 @@ def BW_Tech(
                     pjLog_write(logMsg, I_log, hFileLog)
                 else:
                     hFile = _io.open(fullPath)
-                    datJ = json.loads(hFile.read())
+                    try:
+                        datJ = json.loads(hFile.read())
+                        I_read = True
+                    except Exception as e:
+                        I_read = False
+                        logMsg = "\tUnable to read SW response file\n\t\t" + fullPath
+                        pjLog_write(logMsg, I_log, hFileLog)
                     hFile.close()
 
-                    # Validate that the response has data
-                    #   Gotta love those double negatives!
-                    if not not datJ['Errors']:
-                        logMsg = "\tError detected within BW response file for id_lookup=" + str(id)
-                        pjLog_write(logMsg, I_log, hFileLog)
-                    else:
-                        if len(list(datJ['Results'])) == 1:
-                            iLU = 0
-                        else:
-                            iLU = -1
-
-                            logMsg = "\tMultiple results within BW response file for id_lookup=" + str(id)
-                            pjLog_write(logMsg, I_log, hFileLog)
-
-                            for i in range(0, len(list(datJ['Results']))):
-                                if datJ['Results'][i]['Lookup'].lower() == resSQL_id['domain'].iloc[0]:
-                                    iLU = i
-
-                                    logMsg = "\t\tUsing iLU=" + str(iLU)
-                                    pjLog_write(logMsg, I_log, hFileLog)
-
-                                    break
-
-                        if iLU == -1:
-                            logMsg = "\t\t!! No valid domain matchup found for id_lookup=" + str(id)
+                    if I_read:
+                        # Validate that the response has data
+                        #   Gotta love those double negatives!
+                        if not not datJ['Errors']:
+                            logMsg = "\tError detected within BW response file for id_lookup=" + str(id)
                             pjLog_write(logMsg, I_log, hFileLog)
                         else:
-                            # We know which ['Results'] we are adding
-                            #   Update each table
-                            #       Do metaBW separately, the rest together
-                            if any(tableName=="metaBW") and I_table[tableName=="metaBW"]:
-                                iTable = int( numpy.arange(len(tableName))[tableName=="metaBW"] )
-                                # Do we already have this entry?
-                                cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
-                                    'id_lookup': numpy.asarray([id], dtype=int) }) )
-                                resSQL = pandas.read_sql(cmdStr, hConn)
-                                if resSQL.empty:
-                                    # Entry not present, try to insert
+                            if len(list(datJ['Results'])) == 1:
+                                iLU = 0
+                            else:
+                                iLU = -1
 
-                                    indexFirst = int(datJ['Results'][iLU]['FirstIndexed']) / 1000
-                                    indexLast = int(datJ['Results'][iLU]['LastIndexed']) / 1000
+                                logMsg = "\tMultiple results within BW response file for id_lookup=" + str(id)
+                                pjLog_write(logMsg, I_log, hFileLog)
 
-                                    cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
-                                        'id_lookup': numpy.asarray([id], dtype=int),
-                                        'companyname': numpy.asarray([ datJ['Results'][iLU]['Meta']['CompanyName'] ], dtype=str),
-                                        'vertical': numpy.asarray([ datJ['Results'][iLU]['Meta']['Vertical'] ], dtype=str),
-                                        'arank': numpy.asarray([ datJ['Results'][iLU]['Meta']['ARank'] ], dtype=int),
-                                        'qrank': numpy.asarray([ datJ['Results'][iLU]['Meta']['QRank'] ], dtype=int),
-                                        'IndexedFirst': numpy.asarray([indexFirst], dtype=int),
-                                        'IndexedFirst_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexFirst).date() ], dtype=str),
-                                        'IndexedLast': numpy.asarray([indexLast], dtype=int),
-                                        'IndexedLast_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexLast).date() ], dtype=str) }) )
-                                    hCursor = hConn.cursor()
-                                    try:
-                                        hCursor.execute(cmdStr)
-                                        resSQL = hCursor.fetchall()
-                                    except Exception as e:
-                                        logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
-                                                 "\n\t\t" + cmdStr + "\n\t\t" + str(e)
+                                for i in range(0, len(list(datJ['Results']))):
+                                    if datJ['Results'][i]['Lookup'].lower() == resSQL_id['domain'].iloc[0]:
+                                        iLU = i
+
+                                        logMsg = "\t\tUsing iLU=" + str(iLU)
                                         pjLog_write(logMsg, I_log, hFileLog)
-                                    # try:
-                                    #     resSQL = pandas.read_sql(cmdStr, hConn)
-                                    # except Exception as e:
-                                    #     logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
-                                    #              "\n\t\t" + str(e)
-                                    #     pjLog_write(logMsg, I_log, hFileLog)
 
-                            # Can now do the others if they are available
-                            if all(I_table[tableName != "metaBW"]):
-                                # Get tech, tag and category
-                                for iPaths in range(0, len(list(datJ['Results'][iLU]['Result']['Paths']))):
+                                        break
 
-                                    for iTech in range(0, len(
-                                            list(datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'])
-                                            ) ):
+                            if iLU == -1:
+                                logMsg = "\t\t!! No valid domain matchup found for id_lookup=" + str(id)
+                                pjLog_write(logMsg, I_log, hFileLog)
+                            else:
+                                # We know which ['Results'] we are adding
+                                #   Update each table
+                                #       Do metaBW separately, the rest together
+                                if any(tableName=="metaBW") and I_table[tableName=="metaBW"]:
+                                    iTable = int( numpy.arange(len(tableName))[tableName=="metaBW"] )
+                                    # Do we already have this entry?
+                                    cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                        'id_lookup': numpy.asarray([id], dtype=int) }) )
+                                    resSQL = pandas.read_sql(cmdStr, hConn)
+                                    if resSQL.empty:
+                                        # Entry not present, try to insert
 
-                                        I_addName = False
-                                        techName = strCleanup1(
-                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                'Name'] )
-                                        detectedFirst = int(
-                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                'FirstDetected'] ) / 1000
-                                        detectedLast = int(
-                                            datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                'LastDetected'] ) / 1000
+                                        indexFirst = int(datJ['Results'][iLU]['FirstIndexed']) / 1000
+                                        indexLast = int(datJ['Results'][iLU]['LastIndexed']) / 1000
 
-                                        I_addTag = False
-                                        techTag = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Tag']
-                                        if techTag is None:
-                                            techTag = "none"
-                                        else:
-                                            techTag = strCleanup1(techTag)
+                                        cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                            'id_lookup': numpy.asarray([id], dtype=int),
+                                            'companyname': numpy.asarray([ datJ['Results'][iLU]['Meta']['CompanyName'] ], dtype=str),
+                                            'vertical': numpy.asarray([ datJ['Results'][iLU]['Meta']['Vertical'] ], dtype=str),
+                                            'arank': numpy.asarray([ datJ['Results'][iLU]['Meta']['ARank'] ], dtype=int),
+                                            'qrank': numpy.asarray([ datJ['Results'][iLU]['Meta']['QRank'] ], dtype=int),
+                                            'IndexedFirst': numpy.asarray([indexFirst], dtype=int),
+                                            'IndexedFirst_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexFirst).date() ], dtype=str),
+                                            'IndexedLast': numpy.asarray([indexLast], dtype=int),
+                                            'IndexedLast_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexLast).date() ], dtype=str) }) )
+                                        hCursor = hConn.cursor()
+                                        try:
+                                            hCursor.execute(cmdStr)
+                                            resSQL = hCursor.fetchall()
+                                        except Exception as e:
+                                            logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
+                                                     "\n\t\t" + cmdStr + "\n\t\t" + str(e)
+                                            pjLog_write(logMsg, I_log, hFileLog)
+                                        # try:
+                                        #     resSQL = pandas.read_sql(cmdStr, hConn)
+                                        # except Exception as e:
+                                        #     logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
+                                        #              "\n\t\t" + str(e)
+                                        #     pjLog_write(logMsg, I_log, hFileLog)
 
-                                        techCatList = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                            'Categories']
-                                        if techCatList is None:
-                                            techCatList = "None"
-                                        if isinstance(techCatList, list):
-                                            for iCat in range(0, len(techCatList)):
-                                                techCatList[iCat] = strCleanup1(techCatList[iCat])
-                                        else:
-                                            techCatList = [strCleanup1(techCatList)]
+                                # Can now do the others if they are available
+                                if all(I_table[tableName != "metaBW"]):
+                                    # Get tech, tag and category
+                                    for iPaths in range(0, len(list(datJ['Results'][iLU]['Result']['Paths']))):
 
-                                        # Want to convert name, tag and cat to IDs
-                                        #   Initialize IDs for tag and category
-                                        id_tech = None
-                                        id_tag = None
-                                        idList_cat = [None] * len(techCatList)
+                                        for iTech in range(0, len(
+                                                list(datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'])
+                                                ) ):
 
-                                        # Check to see if we have the Tag
-                                        cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
-                                            'name_techTag': numpy.asarray([techTag], dtype=str)}))
-                                        resSQL = pandas.read_sql(cmdStr, hConn)
-                                        if resSQL.empty:
-                                            # Entry not present, try to insert
-                                            id_tag = id_techTag_max+1
+                                            I_addName = False
+                                            techName = strCleanup1(
+                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                    'Name'] )
+                                            detectedFirst = int(
+                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                    'FirstDetected'] ) / 1000
+                                            detectedLast = int(
+                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                    'LastDetected'] ) / 1000
+
+                                            I_addTag = False
+                                            techTag = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Tag']
+                                            if techTag is None:
+                                                techTag = "none"
+                                            else:
+                                                techTag = strCleanup1(techTag)
+
+                                            techCatList = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                'Categories']
+                                            if techCatList is None:
+                                                techCatList = "None"
+                                            if isinstance(techCatList, list):
+                                                for iCat in range(0, len(techCatList)):
+                                                    techCatList[iCat] = strCleanup1(techCatList[iCat])
+                                            else:
+                                                techCatList = [strCleanup1(techCatList)]
+
+                                            # Want to convert name, tag and cat to IDs
+                                            #   Initialize IDs for tag and category
+                                            id_tech = None
+                                            id_tag = None
+                                            idList_cat = [None] * len(techCatList)
+
+                                            # Check to see if we have the Tag
+                                            cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                                'name_techTag': numpy.asarray([techTag], dtype=str)}))
+                                            resSQL = pandas.read_sql(cmdStr, hConn)
+                                            if resSQL.empty:
+                                                # Entry not present, try to insert
+                                                id_tag = id_techTag_max+1
 
 
 
-                                        else:
-                                            # Get
-                                            id_tag = int( resSQL['id_techTag'].iloc[0] )
+                                            else:
+                                                # Get
+                                                id_tag = int( resSQL['id_techTag'].iloc[0] )
 
 
 
