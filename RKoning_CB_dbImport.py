@@ -12,9 +12,12 @@ import datetime
 import copy
 
 
+I_sample = False
+nSample = 50
+
 I_intelTest = False
-I_grid = False
-I_log = 3 # 0 = none, 1 = print, 2 = file, 3 = print+file
+I_grid = True
+I_log = 2 # 0 = none, 1 = print, 2 = file, 3 = print+file
 
 
 folderPath_root = os.path.abspath( os.path.join( os.path.dirname( os.path.realpath(__file__) ) , os.pardir) )
@@ -133,6 +136,16 @@ def Orgs_cleanup_byType(datRow: pandas.core.frame.DataFrame, datHeader: list,
                 datRow.iloc[idx] = Orgs_cleanup_byType_date(datRow.iloc[idx])
             elif colType == "range":
                 datRow.iloc[idx] = Orgs_cleanup_byType_range(datRow.iloc[idx])
+    return datRow
+def Orgs_cleanup_byType__v2(datRow: pandas.core.frame.DataFrame,
+                      colType_json: dict) -> pandas.core.frame.DataFrame:
+
+    for colName in colType_json:
+        if colName in datRow:
+            if colType_json[colName] == "date":
+                datRow[colName] = Orgs_cleanup_byType_date(datRow[colName])
+            elif colType_json[colName] == "range":
+                datRow[colName] = Orgs_cleanup_byType_range(datRow[colName])
     return datRow
 
 def Orgs_cleanup_byType_date(dat: str) -> str:
@@ -515,6 +528,13 @@ def validateDB_CB_Orgs(
         if not I_flag:
             # Load CB Orgs data
             datOrg = pandas.read_csv(fullPath, sep=',', encoding='utf-8', index_col=0)
+
+            if I_sample:
+                print("Sample")
+                print(datOrg.shape)
+                datOrg = datOrg.iloc[0:nSample]
+                print(datOrg.shape)
+
             # Ensure each entry has an id_lookup
             #   If not, add id_lookup and then re-save the file
             colName = "id_lookup"
@@ -587,10 +607,9 @@ def validateDB_CB_Orgs(
                         #   Clean up
                         #   Add entry to database
                         cmdStr = buildSQL_insertEntry(dbName, tableName,
-                                                      Orgs_cleanup_byType(datOrg[colList_db].iloc[iRow],
-                                                                   datHeader, colList_clean,colIdxList_clean) )
+                                                      Orgs_cleanup_byType__v2(datOrg[colList_db].iloc[iRow],
+                                                                              colList_clean) )
                         hCursor = hConn.cursor()
-
                         try:
                             hCursor.execute(cmdStr)
                             resSQL = hCursor.fetchall()
@@ -662,14 +681,16 @@ def CB_Orgs_responseFiles(
             for iRow in range(0, datResponse.shape[0]):
                 # Get index
                 idx = int(datResponse.iloc[iRow].name)
-                # Record filename and I_response
-                datOrg[colList_fn_Org[i]].ix[idx] = datResponse[colList_fn_response[i]].iloc[iRow]
-                datOrg[colList_I_Org[i]].ix[idx] = datResponse[colList_I_response[i]].iloc[iRow]
-                # Verify I_response
-                if datOrg[colList_I_Org[i]].ix[idx] == 1:
-                    fullPath = os.path.join(folderList_response[i], datOrg[colList_fn_Org[i]].ix[idx])
-                    if not os.path.exists(fullPath):
-                        datOrg[colList_I_Org[i]].ix[idx] = 0
+                # Does this index occur in the Organizations data?
+                if idx in datOrg.index:
+                    # Record filename and I_response
+                    datOrg[colList_fn_Org[i]].ix[idx] = datResponse[colList_fn_response[i]].iloc[iRow]
+                    datOrg[colList_I_Org[i]].ix[idx] = datResponse[colList_I_response[i]].iloc[iRow]
+                    # Verify I_response
+                    if datOrg[colList_I_Org[i]].ix[idx] == 1:
+                        fullPath = os.path.join(folderList_response[i], datOrg[colList_fn_Org[i]].ix[idx])
+                        if not os.path.exists(fullPath):
+                            datOrg[colList_I_Org[i]].ix[idx] = 0
     pandas.options.mode.chained_assignment = 'warn'
 
     return datOrg, I_flag, errMsg
@@ -801,11 +822,13 @@ def SW_Visit(
                                     'visit_granularity': numpy.asarray([granularity], dtype=str),
                                     'visit_date': numpy.asarray([visitDate], dtype=str),
                                     'visit_count': numpy.asarray([visitCt], dtype=str) }) )
+                            hCursor = hConn.cursor()
                             try:
-                                resSQL = pandas.read_sql(cmdStr, hConn)
+                                hCursor.execute(cmdStr)
+                                resSQL = hCursor.fetchall()
                             except Exception as e:
                                 logMsg = "\tUnable to add SW data for id_lookup=" + str(id) + \
-                                         ", date=" + str(visitDate) + "\n\t\t" + str(e)
+                                         ", date=" + str(visitDate) + "\n\t\t" + cmdStr + "\n\t\t" + str(e)
                                 pjLog_write(logMsg, I_log, hFileLog)
     return I_flag, errMsg
 
@@ -993,12 +1016,20 @@ def BW_Tech(
                                         'IndexedFirst_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexFirst).date() ], dtype=str),
                                         'IndexedLast': numpy.asarray([indexLast], dtype=int),
                                         'IndexedLast_date': numpy.asarray([ datetime.datetime.fromtimestamp(indexLast).date() ], dtype=str) }) )
+                                    hCursor = hConn.cursor()
                                     try:
-                                        resSQL = pandas.read_sql(cmdStr, hConn)
+                                        hCursor.execute(cmdStr)
+                                        resSQL = hCursor.fetchall()
                                     except Exception as e:
                                         logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
-                                                 "\n\t\t" + str(e)
+                                                 "\n\t\t" + cmdStr + "\n\t\t" + str(e)
                                         pjLog_write(logMsg, I_log, hFileLog)
+                                    # try:
+                                    #     resSQL = pandas.read_sql(cmdStr, hConn)
+                                    # except Exception as e:
+                                    #     logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
+                                    #              "\n\t\t" + str(e)
+                                    #     pjLog_write(logMsg, I_log, hFileLog)
 
                             # Can now do the others if they are available
                             if all(I_table[tableName != "metaBW"]):
@@ -1156,15 +1187,17 @@ def main():
                     pjLog_write(logMsg, I_log, hFileLog)
 
 
-                tableName = ["metaBW","Tech", "TechTag", "TechCat", "DomainTech"]
-                I_flag, errMsg = BW_Tech(
-                    hConn, dbName, tableName, tableNameOrg,
-                    folderPath_tables,
-                    I_log, hFileLog)
-
-                if I_flag:
-                    logMsg = "end of function: BW_Tech\n\tFlagged\n\tMessage: " + errMsg
-                    pjLog_write(logMsg, I_log, hFileLog)
+                # tableName = ["metaBW","Tech", "TechTag", "TechCat", "DomainTech"]
+                # tableName = ["metaBW"]
+                #
+                # I_flag, errMsg = BW_Tech(
+                #     hConn, dbName, tableName, tableNameOrg,
+                #     folderPath_tables,
+                #     I_log, hFileLog)
+                #
+                # if I_flag:
+                #     logMsg = "end of function: BW_Tech\n\tFlagged\n\tMessage: " + errMsg
+                #     pjLog_write(logMsg, I_log, hFileLog)
 
         if I_conn:
             hConn.close()
