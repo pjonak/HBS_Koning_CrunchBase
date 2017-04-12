@@ -12,12 +12,12 @@ import datetime
 import copy
 
 
-I_sample = False
-nSample = 50
+I_sample = True
+nSample = 100
 
 I_intelTest = False
-I_grid = True
-I_log = 2 # 0 = none, 1 = print, 2 = file, 3 = print+file
+I_grid = False
+I_log = 3 # 0 = none, 1 = print, 2 = file, 3 = print+file
 
 
 folderPath_root = os.path.abspath( os.path.join( os.path.dirname( os.path.realpath(__file__) ) , os.pardir) )
@@ -73,19 +73,19 @@ def pjLog_open(logSettings: int = 3) -> _io.TextIOWrapper:
         #   Assume current code ends in .py
         logPath = os.path.join(folderPath_root,
                                os.path.basename(os.path.realpath(__file__))[0:-3] +\
-                               datetime.datetime.now().strftime("%Y-%m-%d") + \
+                               "__" + datetime.datetime.now().strftime("%Y-%m-%d") + \
                                ".log" )
         if os.path.exists(logPath):
             iRun = 1
             logPath = os.path.join(folderPath_root,
                                    os.path.basename(os.path.realpath(__file__))[0:-3] + \
-                                   datetime.datetime.now().strftime("%Y-%m-%d") + \
+                                   "__" + datetime.datetime.now().strftime("%Y-%m-%d") + \
                                    "__run" + str(iRun) + ".log")
             while os.path.exists(logPath):
                 iRun += 1
                 logPath = os.path.join(folderPath_root,
                                        os.path.basename(os.path.realpath(__file__))[0:-3] + \
-                                       datetime.datetime.now().strftime("%Y-%m-%d") + \
+                                       "__" + datetime.datetime.now().strftime("%Y-%m-%d") + \
                                        "__run" + str(iRun) + ".log")
         hFile = open(logPath, 'w', encoding="utf8")
         logMsg = "Log file for:\n\t" + os.path.realpath(__file__)
@@ -869,29 +869,22 @@ def BW_Tech(
     logMsg = "function: BW_Tech"
     pjLog_write(logMsg, I_log, hFileLog)
 
+    logMsg = "\tmetaBW - check for updates - IndexedLast"
+    pjLog_write(logMsg, I_log, hFileLog)
+    logMsg = "\tDomainTech - check for updates - DetectedLast"
+    pjLog_write(logMsg, I_log, hFileLog)
+
 
     colName_response = "bw_I_response"
     colName_filename = "bw_filename"
 
-    tableName = numpy.asarray(tableName) # will be easier to work with later than a list
-
     I_table = [False] * len(tableName)
 
+    tableName = numpy.asarray(tableName)  # will be easier to work with later than a list
+    I_table = numpy.asarray(I_table)      # will be easier to work with later than a list
+
+
     for iTable in range(0, len(tableName)):
-
-        if tableName[iTable] == "Tech":
-            colList_pk = ['id_tech', 'id_techTag', 'id_techCat']
-        elif tableName[iTable] == "TechTag":
-            colList_pk = ['id_techTag']
-        elif tableName[iTable] == "TechCat":
-            colList_pk = ['id_techCat']
-        elif tableName[iTable] == "DomainTech":
-            colList_pk = ['id_lookup']
-        else:
-            colList_pk = None
-
-        fn_info = os.path.join(folderPath_tables, "table_" + tableName[iTable] + "__dbSetup.txt")
-
         # Validate we have our table within the database
         #   Create otherwise
         cmdStr = buildSQL_existTable(dbName, tableName[iTable])
@@ -899,9 +892,38 @@ def BW_Tech(
         if resSQL.empty:
             # Need to create table
             #   Confirm we have table settings
+            fn_info = os.path.join(folderPath_tables, "table_" + tableName[iTable] + "__dbSetup.txt")
             if os.path.exists(fn_info):
                 # Get table info
                 info_table = pandas.read_csv(fn_info)
+
+                I_addZeros = False
+
+                if tableName[iTable] == "Tech":
+                    colList_pk = ['id_tech', 'id_techTag', 'id_techCat']
+                    I_addZeros = True
+                    datInit = pandas.DataFrame({
+                            'id_tech': numpy.asarray([0], dtype=int),
+                            'id_techTag': numpy.asarray([0], dtype=int),
+                            'id_techCat': numpy.asarray([0], dtype=int),
+                            'name_tech': numpy.asarray(["None"], dtype=str) })
+                elif tableName[iTable] == "TechTag":
+                    colList_pk = ['id_techTag']
+                    I_addZeros = True
+                    datInit = pandas.DataFrame({
+                        'id_techTag': numpy.asarray([0], dtype=int),
+                        'name_techTag': numpy.asarray(["None"], dtype=str) })
+                elif tableName[iTable] == "TechCat":
+                    colList_pk = ['id_techCat']
+                    I_addZeros = True
+                    datInit = pandas.DataFrame({
+                        'id_techCat': numpy.asarray([0], dtype=int),
+                        'name_techCat': numpy.asarray(["None"], dtype=str) })
+                elif tableName[iTable] == "DomainTech":
+                    colList_pk = ['id_lookup', 'id_tech']
+                else:
+                    colList_pk = None
+
                 # Build SQL command
                 cmdStr = buildSQL_createTable(dbName, tableName[iTable], info_table, colList_pk)
                 # Get results (cannot use pandas_read_sql here, results in error)
@@ -909,7 +931,23 @@ def BW_Tech(
                 hCursor.execute(cmdStr)
                 resSQL = hCursor.fetchall()
                 if len(resSQL) == 0:
-                    I_table[iTable] = True
+
+                    if not I_addZeros:
+                        I_table[iTable] = True
+                    else:
+                        # Build SQL
+                        cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], datInit)
+                        # Get results (cannot use pandas_read_sql here, results in error)
+                        hCursor = hConn.cursor()
+                        hCursor.execute(cmdStr)
+                        resSQL = hCursor.fetchall()
+                        if len(resSQL) == 0:
+                            I_table[iTable] = True
+                        else:
+                            I_flag = True
+                            logMsg = "\tCreated table but unable to initialize: " + tableName[iTable] + "\n\t\t" + cmdStr
+                            pjLog_write(logMsg, I_log, hFileLog)
+
                 else:
                     I_flag = True
                     logMsg = "\tError creating table " + tableName[iTable] + "\n\t\t" + cmdStr
@@ -928,45 +966,56 @@ def BW_Tech(
         id_lookup_min = resSQL['MIN(id_lookup)'].iloc[0]
         id_lookup_max = resSQL['MAX(id_lookup)'].iloc[0]
 
-        logMsg = "Loading and acting on BuiltWith response files"
+        logMsg = "\tLoading and acting on BuiltWith response files"
         pjLog_write(logMsg, I_log, hFileLog)
 
         if not any(tableName=="metaBW") or not I_table[tableName=="metaBW"]:
             logMsg = "\t!! Will not be storing BW meta data !!\n\t\tTable unavailable or not requested\n"
             pjLog_write(logMsg, I_log, hFileLog)
+            I_table_meta = False
+        else:
+            I_table_meta = True
+            tableName_meta = tableName[tableName=="metaBW"][0]
 
-        if not all(I_table[tableName!="metaBW"]):
+        if not (I_table[tableName != "metaBW"].shape[0] != 0 and all(I_table[tableName != "metaBW"])):
             logMsg = "\t!! Will not be storing BW data related to technologies !!\n\t\tAll tables must be available and requested together\n"
             pjLog_write(logMsg, I_log, hFileLog)
+            I_table_tech = False
         else:
+            I_table_tech = True
             # Get max
             #   id_tech
             #   id_techTag
             #   id_techCat
             for tname in tableName[tableName!="metaBW"]:
                 if tname.lower() == "tech":
+                    tableName_Tech = tname
                     cmdStr = "SELECT MAX(id_tech) FROM " + dbName + "." + tname + ";"
                     resSQL = pandas.read_sql(cmdStr, hConn)
                     id_tech_max = resSQL['MAX(id_tech)'].iloc[0]
                     if id_tech_max is None:
                         id_tech_max = 2000
                 elif tname.lower() == "techtag":
+                    tableName_TechTag = tname
                     cmdStr = "SELECT MAX(id_techTag) FROM " + dbName + "." + tname + ";"
                     resSQL = pandas.read_sql(cmdStr, hConn)
                     id_techTag_max = resSQL['MAX(id_techTag)'].iloc[0]
                     if id_techTag_max is None:
                         id_techTag_max = 1000
                 elif tname.lower() == "techcat":
+                    tableName_TechCat = tname
                     cmdStr = "SELECT MAX(id_techCat) FROM " + dbName + "." + tname + ";"
                     resSQL = pandas.read_sql(cmdStr, hConn)
                     id_techCat_max = resSQL['MAX(id_techCat)'].iloc[0]
                     if id_techCat_max is None:
                         id_techCat_max = 0
+                elif tname.lower() == "domaintech":
+                    tableName_DomainTech = tname
+
 
 
         # Go through all IDs
         for id in range(id_lookup_min, 1 + id_lookup_max):
-            pjLog_write(logMsg, I_log, hFileLog)
 
             cmdStr = buildSQL_getEntry(dbName, tableNameOrg,
                                        pandas.DataFrame({'id_lookup': numpy.asarray([id], dtype=int)}))
@@ -983,7 +1032,7 @@ def BW_Tech(
                 filename = resSQL[colName_filename].iloc[0]
                 fullPath = os.path.join(folderPath_BW, filename)
                 if not os.path.exists(fullPath):
-                    logMsg = "\tUnable to find BW response file for id_lookup=" + str(id) + "\n\t\t" + fullPath
+                    logMsg = "\t\tUnable to find BW response file for id_lookup=" + str(id) + "\n\t\t\t" + fullPath
                     pjLog_write(logMsg, I_log, hFileLog)
                 else:
                     hFile = _io.open(fullPath)
@@ -992,7 +1041,7 @@ def BW_Tech(
                         I_read = True
                     except Exception as e:
                         I_read = False
-                        logMsg = "\tUnable to read SW response file\n\t\t" + fullPath
+                        logMsg = "\t\tUnable to read SW response file\n\t\t\t" + fullPath
                         pjLog_write(logMsg, I_log, hFileLog)
                     hFile.close()
 
@@ -1000,7 +1049,7 @@ def BW_Tech(
                         # Validate that the response has data
                         #   Gotta love those double negatives!
                         if not not datJ['Errors']:
-                            logMsg = "\tError detected within BW response file for id_lookup=" + str(id)
+                            logMsg = "\t\tError detected within BW response file for id_lookup=" + str(id)
                             pjLog_write(logMsg, I_log, hFileLog)
                         else:
                             if len(list(datJ['Results'])) == 1:
@@ -1008,7 +1057,7 @@ def BW_Tech(
                             else:
                                 iLU = -1
 
-                                logMsg = "\tMultiple results within BW response file for id_lookup=" + str(id)
+                                logMsg = "\t\tMultiple results within BW response file for id_lookup=" + str(id)
                                 pjLog_write(logMsg, I_log, hFileLog)
 
                                 for i in range(0, len(list(datJ['Results']))):
@@ -1021,16 +1070,15 @@ def BW_Tech(
                                         break
 
                             if iLU == -1:
-                                logMsg = "\t\t!! No valid domain matchup found for id_lookup=" + str(id)
+                                logMsg = "\t\t\t!! No valid domain matchup found for id_lookup=" + str(id)
                                 pjLog_write(logMsg, I_log, hFileLog)
                             else:
                                 # We know which ['Results'] we are adding
                                 #   Update each table
                                 #       Do metaBW separately, the rest together
-                                if any(tableName=="metaBW") and I_table[tableName=="metaBW"]:
-                                    iTable = int( numpy.arange(len(tableName))[tableName=="metaBW"] )
+                                if I_table_meta:
                                     # Do we already have this entry?
-                                    cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                    cmdStr = buildSQL_matchEntry(dbName, tableName_meta, pandas.DataFrame({
                                         'id_lookup': numpy.asarray([id], dtype=int) }) )
                                     resSQL = pandas.read_sql(cmdStr, hConn)
                                     if resSQL.empty:
@@ -1039,7 +1087,7 @@ def BW_Tech(
                                         indexFirst = int(datJ['Results'][iLU]['FirstIndexed']) / 1000
                                         indexLast = int(datJ['Results'][iLU]['LastIndexed']) / 1000
 
-                                        cmdStr = buildSQL_insertEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                        cmdStr = buildSQL_insertEntry(dbName, tableName_meta, pandas.DataFrame({
                                             'id_lookup': numpy.asarray([id], dtype=int),
                                             'companyname': numpy.asarray([ datJ['Results'][iLU]['Meta']['CompanyName'] ], dtype=str),
                                             'vertical': numpy.asarray([ datJ['Results'][iLU]['Meta']['Vertical'] ], dtype=str),
@@ -1054,18 +1102,12 @@ def BW_Tech(
                                             hCursor.execute(cmdStr)
                                             resSQL = hCursor.fetchall()
                                         except Exception as e:
-                                            logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
-                                                     "\n\t\t" + cmdStr + "\n\t\t" + str(e)
+                                            logMsg = "\t\tUnable to add BW meta data for id_lookup=" + str(id) + \
+                                                     "\n\t\t\t" + cmdStr + "\n\t\t\t" + str(e)
                                             pjLog_write(logMsg, I_log, hFileLog)
-                                        # try:
-                                        #     resSQL = pandas.read_sql(cmdStr, hConn)
-                                        # except Exception as e:
-                                        #     logMsg = "\tUnable to add BW meta data for id_lookup=" + str(id) + \
-                                        #              "\n\t\t" + str(e)
-                                        #     pjLog_write(logMsg, I_log, hFileLog)
 
                                 # Can now do the others if they are available
-                                if all(I_table[tableName != "metaBW"]):
+                                if I_table_tech:
                                     # Get tech, tag and category
                                     for iPaths in range(0, len(list(datJ['Results'][iLU]['Result']['Paths']))):
 
@@ -1074,25 +1116,22 @@ def BW_Tech(
                                                 ) ):
 
                                             I_addName = False
-                                            techName = strCleanup1(
-                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                    'Name'] )
-                                            detectedFirst = int(
-                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                    'FirstDetected'] ) / 1000
-                                            detectedLast = int(
-                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                    'LastDetected'] ) / 1000
+                                            techName = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Name']
+                                            if techName is None:
+                                                techName = "None"
+                                            else:
+                                                techName = strCleanup1(techName)
+
 
                                             I_addTag = False
                                             techTag = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Tag']
                                             if techTag is None:
-                                                techTag = "none"
+                                                techTag = "None"
                                             else:
                                                 techTag = strCleanup1(techTag)
 
-                                            techCatList = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
-                                                'Categories']
+
+                                            techCatList = datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech]['Categories']
                                             if techCatList is None:
                                                 techCatList = "None"
                                             if isinstance(techCatList, list):
@@ -1101,6 +1140,7 @@ def BW_Tech(
                                             else:
                                                 techCatList = [strCleanup1(techCatList)]
 
+
                                             # Want to convert name, tag and cat to IDs
                                             #   Initialize IDs for tag and category
                                             id_tech = None
@@ -1108,20 +1148,162 @@ def BW_Tech(
                                             idList_cat = [None] * len(techCatList)
 
                                             # Check to see if we have the Tag
-                                            cmdStr = buildSQL_matchEntry(dbName, tableName[iTable], pandas.DataFrame({
+                                            cmdStr = buildSQL_getEntry(dbName, tableName_TechTag, pandas.DataFrame({
                                                 'name_techTag': numpy.asarray([techTag], dtype=str)}))
                                             resSQL = pandas.read_sql(cmdStr, hConn)
                                             if resSQL.empty:
                                                 # Entry not present, try to insert
+                                                I_addTag = True
                                                 id_tag = id_techTag_max+1
-
-
+                                                cmdStr = buildSQL_insertEntry(dbName, tableName_TechTag,
+                                                                              pandas.DataFrame({
+                                                                                  'id_techTag': numpy.asarray([id_tag],dtype=int),
+                                                                                  'name_techTag': numpy.asarray([techTag],dtype=str)
+                                                                              }) )
+                                                hCursor = hConn.cursor()
+                                                try:
+                                                    hCursor.execute(cmdStr)
+                                                    resSQL = hCursor.fetchall()
+                                                    # Update id_techTag_max
+                                                    id_techTag_max += 1
+                                                except Exception as e:
+                                                    logMsg = "\t\tUnable to add BW TechTag data for id_lookup=" + str(id) + \
+                                                             "\n\t\t\t" + cmdStr + "\n\t\t\t" + str(e)
+                                                    pjLog_write(logMsg, I_log, hFileLog)
 
                                             else:
                                                 # Get
                                                 id_tag = int( resSQL['id_techTag'].iloc[0] )
 
 
+                                            # Check to see if we have the Category
+                                            I_addCat = False
+                                            for iCat in range(0, len(techCatList)):
+                                                cmdStr = buildSQL_getEntry(dbName, tableName_TechCat, pandas.DataFrame({
+                                                    'name_techCat': numpy.asarray([ techCatList[iCat] ], dtype=str)}))
+                                                resSQL = pandas.read_sql(cmdStr, hConn)
+                                                if resSQL.empty:
+                                                    # Entry not present, try to insert
+                                                    I_addCat
+                                                    idList_cat[iCat] = id_techCat_max + 1
+                                                    cmdStr = buildSQL_insertEntry(dbName, tableName_TechCat,
+                                                                                  pandas.DataFrame({
+                                                                                      'id_techCat': numpy.asarray([idList_cat[iCat]], dtype=int),
+                                                                                      'name_techCat': numpy.asarray([techCatList[iCat]], dtype=str)
+                                                                                  }) )
+                                                    hCursor = hConn.cursor()
+                                                    try:
+                                                        hCursor.execute(cmdStr)
+                                                        resSQL = hCursor.fetchall()
+                                                        # Update id_techTag_max
+                                                        id_techCat_max += 1
+                                                    except Exception as e:
+                                                        logMsg = "\t\tUnable to add BW TechCat data for id_lookup=" + \
+                                                                 str(id) + "\n\t\t\t" + cmdStr + "\n\t\t\t" + str(e)
+                                                        pjLog_write(logMsg, I_log, hFileLog)
+
+                                                else:
+                                                    # Get
+                                                    idList_cat[iCat] = int(resSQL['id_techCat'].iloc[0])
+
+
+                                            # Make sure at this point we have valid TechTag and TechCat ids
+                                            if id_tag is None:
+                                                id_tag = 0
+                                            for iCat in range(0, len(idList_cat)):
+                                                if idList_cat[iCat] is None:
+                                                    idList_cat[iCat] = 0
+
+                                            # Check to see if we have the Tech name
+                                            cmdStr = buildSQL_getEntry(dbName, tableName_Tech, pandas.DataFrame({
+                                                'name_tech': numpy.asarray([techName], dtype=str)}))
+                                            resSQL = pandas.read_sql(cmdStr, hConn)
+                                            if resSQL.empty:
+                                                # Entry not present, try to insert
+                                                I_addName = True
+                                                I_added = False # to track whether we increment id_tech_max
+
+                                                # Get ids related to Tech, TechTag and TechCat
+                                                id_tech = id_tech_max + 1
+                                                for iCat in range(0, len(techCatList)):
+                                                    id_cat = idList_cat[iCat]
+
+                                                    cmdStr = buildSQL_insertEntry(dbName, tableName_Tech,
+                                                                                  pandas.DataFrame({
+                                                                                      'id_tech': numpy.asarray([id_tech],dtype=int),
+                                                                                      'id_techTag': numpy.asarray([id_tag],dtype=int),
+                                                                                      'id_techCat': numpy.asarray([id_cat],dtype=int),
+                                                                                      'name_tech': numpy.asarray([techName], dtype=str)
+                                                                                  }) )
+                                                    hCursor = hConn.cursor()
+                                                    try:
+                                                        hCursor.execute(cmdStr)
+                                                        resSQL = hCursor.fetchall()
+
+                                                        if not I_added:
+                                                            I_added = True
+
+                                                    except Exception as e:
+                                                        logMsg = "\t\tUnable to add BW Tech data for id_lookup=" + str(id) + \
+                                                                 "\n\t\t\t" + cmdStr + "\n\t\t\t" + str(e)
+                                                        pjLog_write(logMsg, I_log, hFileLog)
+
+                                                if I_added:
+                                                    id_tech_max += 1
+                                            else:
+                                                # Get
+                                                id_tech = int(resSQL['id_tech'].iloc[0])
+
+
+                                            # Check that no Tech has new Tag and Cat fields that haven't been added
+                                            if not I_addName and (I_addTag or I_addCat):
+                                                logMsg = "\tAlready had tech name but new Tag or Cat!\n\t\t" + techName + \
+                                                          "\n\t\tid_lookup=" + str(id)
+                                                pjLog_write(logMsg, I_log, hFileLog)
+
+
+                                            # Make sure at this point we have valid Tech id
+                                            #   Already verified TechTag and TechCat ids
+                                            if id_tech is None:
+                                                id_tech = 0
+
+                                            # Ready to match id_lookup with Tech
+                                            detectedFirst = int(
+                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                    'FirstDetected']) / 1000
+                                            detectedLast = int(
+                                                datJ['Results'][iLU]['Result']['Paths'][iPaths]['Technologies'][iTech][
+                                                    'LastDetected']) / 1000
+
+                                            cmdStr = buildSQL_matchEntry(dbName, tableName_DomainTech, pandas.DataFrame({
+                                                'id_lookup': numpy.asarray([id], dtype=int),
+                                                'id_tech': numpy.asarray([id_tech], dtype=int) }) )
+                                            # cmdStr = buildSQL_getEntry(dbName, tableName_DomainTech, pandas.DataFrame({
+                                            #     'id_lookup': numpy.asarray([id], dtype=str)}))
+                                            resSQL = pandas.read_sql(cmdStr, hConn)
+                                            if resSQL.empty:
+                                                # Entry not present, try to insert
+                                                cmdStr = buildSQL_insertEntry(dbName, tableName_DomainTech,
+                                                                              pandas.DataFrame({
+                                                                                  'id_lookup': numpy.asarray([id],dtype=int),
+                                                                                  'id_tech': numpy.asarray([id_tech],dtype=int),
+                                                                                  'DetectedFirst': numpy.asarray([detectedFirst],dtype=str),
+                                                                                  'DetectedFirst_date': numpy.asarray([
+                                                                                      datetime.datetime.fromtimestamp(
+                                                                                          detectedFirst).date() ], dtype=str),
+                                                                                  'DetectedLast': numpy.asarray([detectedLast], dtype=str),
+                                                                                  'DetectedLast_date': numpy.asarray([
+                                                                                      datetime.datetime.fromtimestamp(
+                                                                                          detectedLast).date()], dtype=str)
+                                                                              }) )
+                                                hCursor = hConn.cursor()
+                                                try:
+                                                    hCursor.execute(cmdStr)
+                                                    resSQL = hCursor.fetchall()
+                                                except Exception as e:
+                                                    logMsg = "\t\tUnable to add BW DomainTech data for id_lookup=" + str(id) + \
+                                                             "\n\t\t\t" + cmdStr + "\n\t\t\t" + str(e)
+                                                    pjLog_write(logMsg, I_log, hFileLog)
 
     return I_flag, errMsg
 
@@ -1220,17 +1402,16 @@ def main():
                     pjLog_write(logMsg, I_log, hFileLog)
 
 
-                # tableName = ["metaBW","Tech", "TechTag", "TechCat", "DomainTech"]
-                # tableName = ["metaBW"]
-                #
-                # I_flag, errMsg = BW_Tech(
-                #     hConn, dbName, tableName, tableNameOrg,
-                #     folderPath_tables,
-                #     I_log, hFileLog)
-                #
-                # if I_flag:
-                #     logMsg = "end of function: BW_Tech\n\tFlagged\n\tMessage: " + errMsg
-                #     pjLog_write(logMsg, I_log, hFileLog)
+                tableName = ["metaBW","Tech", "TechTag", "TechCat", "DomainTech"]
+
+                I_flag, errMsg = BW_Tech(
+                    hConn, dbName, tableName, tableNameOrg,
+                    folderPath_tables,
+                    I_log, hFileLog)
+
+                if I_flag:
+                    logMsg = "end of function: BW_Tech\n\tFlagged\n\tMessage: " + errMsg
+                    pjLog_write(logMsg, I_log, hFileLog)
 
         if I_conn:
             hConn.close()
